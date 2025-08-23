@@ -56,6 +56,23 @@ MiiA_Web/
 - Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL`.
 - Si `VITE_API_URL` está definida, al iniciar se valida la sesión con `GET /auth/me` usando el `miia_token`. Si falla, se limpia la sesión y no se usa mock. Sin backend, se usa el login/mock (admin/miia2025) y se restaura `miia_auth` local.
 
+## Autenticación
+
+- Backend configurable mediante `VITE_API_URL` (Vite). Cuando existe:
+  - En el arranque, `AuthProvider` valida la sesión con `GET /auth/me`.
+  - Mientras valida/restaura la sesión, se expone `isInitializing` y las rutas protegidas muestran un spinner “Restaurando sesión…”.
+  - Si la validación falla, se limpia la sesión y se redirige a login.
+- Sin backend (`VITE_API_URL` vacío/no definido):
+  - Modo mock de desarrollo. Acceso con `admin` / `miia2025`.
+  - La sesión se persiste en `localStorage` bajo la clave `miia_auth`.
+- Rutas protegidas: `ProtectedRoute` redirige a `/login?returnTo=...` si no hay sesión.
+
+Archivos relevantes:
+
+- `src/contexts/AuthContext.tsx`: contexto de auth, `isInitializing`, login/logout.
+- `src/components/Auth/ProtectedRoute.tsx`: protección de rutas y spinner inicial.
+- `src/components/Auth/Login.tsx`: formulario de login con mensajes según modo backend/mock.
+
 ## CI
 
 - GitHub Actions ejecuta lint, typecheck, build y tests en `main` y `develop`.
