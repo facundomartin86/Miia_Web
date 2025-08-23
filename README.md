@@ -28,11 +28,13 @@ npm run preview     # previsualizar build
 npm run lint        # linting con ESLint
 npm run format      # formateo con Prettier
 npm run typecheck   # verificación de tipos (TypeScript)
+npm test            # ejecutar tests (Vitest)
+npm run test:watch  # tests en watch
 ```
 
 ## Estructura
 
-```
+```text
 MiiA_Web/
 ├─ docs/                  # documentación (prompt, arquitectura, roadmap)
 ├─ public/                # estáticos (imágenes, favicon)
@@ -47,6 +49,21 @@ MiiA_Web/
 ├─ package.json
 └─ vite.config.ts
 ```
+
+## Entorno
+
+- Variables: ver `docs/environment.md`.
+- Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL`.
+- Si `VITE_API_URL` está definida, al iniciar se valida la sesión con `GET /auth/me` usando el `miia_token`. Si falla, se limpia la sesión y no se usa mock. Sin backend, se usa el login/mock (admin/miia2025) y se restaura `miia_auth` local.
+
+## CI
+
+- GitHub Actions ejecuta lint, typecheck, build y tests en `main` y `develop`.
+- Workflow: `.github/workflows/ci.yml`.
+
+## Documentación de Módulos
+
+- Análisis y plan por fases: `docs/modules.md`.
 
 ## Flujo de trabajo (Git Flow clásico)
 
