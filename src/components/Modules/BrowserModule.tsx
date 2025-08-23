@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { 
-  Globe, 
-  ArrowLeft, 
-  ArrowRight, 
-  RotateCcw, 
+import React, { useState } from "react";
+import {
+  Globe,
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
   Search,
   BookOpen,
   Download,
-  Eye
-} from 'lucide-react';
+  Eye,
+} from "lucide-react";
 
 const BrowserModule: React.FC = () => {
-  const [url, setUrl] = useState('https://example.com');
+  const [url, setUrl] = useState("https://example.com");
   const [isLoading, setIsLoading] = useState(false);
   const [analysisMode, setAnalysisMode] = useState(false);
 
@@ -29,7 +29,7 @@ const BrowserModule: React.FC = () => {
 
   const handleLearnFromPage = () => {
     // Aquí se implementaría la extracción y almacenamiento de información
-    alert('Información extraída y guardada en mi memoria local');
+    alert("Información extraída y guardada en mi memoria local");
   };
 
   return (
@@ -38,7 +38,9 @@ const BrowserModule: React.FC = () => {
       <div className="glass-morphism rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Navegador Integrado</h1>
+            <h1 className="text-2xl font-bold text-white">
+              Navegador Integrado
+            </h1>
             <p className="text-blue-200">Navega y aprende automáticamente</p>
           </div>
           <div className="flex items-center space-x-2">
@@ -46,12 +48,12 @@ const BrowserModule: React.FC = () => {
               onClick={handleAnalyze}
               className={`px-4 py-2 rounded-lg transition-all ${
                 analysisMode
-                  ? 'bg-green-500 text-white'
-                  : 'bg-slate-700 text-blue-300 hover:bg-slate-600'
+                  ? "bg-green-500 text-white"
+                  : "bg-slate-700 text-blue-300 hover:bg-slate-600"
               }`}
             >
               <Eye className="w-4 h-4 mr-2 inline" />
-              {analysisMode ? 'Analizando...' : 'Modo Análisis'}
+              {analysisMode ? "Analizando..." : "Modo Análisis"}
             </button>
           </div>
         </div>
@@ -69,7 +71,7 @@ const BrowserModule: React.FC = () => {
               <RotateCcw className="w-4 h-4" />
             </button>
           </div>
-          
+
           <div className="flex-1 relative">
             <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-300 w-4 h-4" />
             <input
@@ -77,7 +79,7 @@ const BrowserModule: React.FC = () => {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   e.preventDefault();
                   handleNavigate(url);
                 }
@@ -86,7 +88,7 @@ const BrowserModule: React.FC = () => {
               placeholder="Ingresa una URL o busca algo..."
             />
           </div>
-          
+
           <button
             onClick={() => handleNavigate(url)}
             className="p-2 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-lg hover:from-blue-600 hover:to-cyan-500 transition-all"
@@ -111,7 +113,8 @@ const BrowserModule: React.FC = () => {
                 <Globe className="w-16 h-16 mx-auto mb-4 opacity-50" />
                 <p className="text-lg">Navegador Web Integrado</p>
                 <p className="text-sm opacity-70 mt-2">
-                  En la implementación completa aquí se mostraría el contenido web real
+                  En la implementación completa aquí se mostraría el contenido
+                  web real
                 </p>
                 <div className="mt-6 space-y-2">
                   <button
@@ -134,10 +137,14 @@ const BrowserModule: React.FC = () => {
         {/* Analysis Panel */}
         {analysisMode && (
           <div className="w-80 glass-morphism rounded-xl p-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Análisis Automático</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Análisis Automático
+            </h3>
             <div className="space-y-4">
               <div className="bg-slate-800/50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-blue-300 mb-2">Elementos Detectados</h4>
+                <h4 className="text-sm font-medium text-blue-300 mb-2">
+                  Elementos Detectados
+                </h4>
                 <ul className="text-sm text-blue-200 space-y-1">
                   <li>• Títulos: 3</li>
                   <li>• Párrafos: 12</li>
@@ -145,9 +152,11 @@ const BrowserModule: React.FC = () => {
                   <li>• Imágenes: 5</li>
                 </ul>
               </div>
-              
+
               <div className="bg-slate-800/50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-green-300 mb-2">Información Extraída</h4>
+                <h4 className="text-sm font-medium text-green-300 mb-2">
+                  Información Extraída
+                </h4>
                 <ul className="text-sm text-green-200 space-y-1">
                   <li>• Tema principal identificado</li>
                   <li>• Conceptos clave guardados</li>
@@ -156,7 +165,9 @@ const BrowserModule: React.FC = () => {
               </div>
 
               <div className="bg-slate-800/50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-yellow-300 mb-2">Acciones Sugeridas</h4>
+                <h4 className="text-sm font-medium text-yellow-300 mb-2">
+                  Acciones Sugeridas
+                </h4>
                 <div className="space-y-2">
                   <button className="w-full text-left text-sm text-yellow-200 hover:text-yellow-100 transition-colors">
                     → Guardar en memoria permanente

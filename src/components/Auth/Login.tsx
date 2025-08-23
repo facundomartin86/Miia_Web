@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { Brain, Lock, User } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { Brain, Lock, User } from "lucide-react";
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     const success = await login(username, password);
     if (!success) {
-      setError('Credenciales incorrectas. Intenta de nuevo.');
+      setError("Credenciales incorrectas. Intenta de nuevo.");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -79,7 +79,7 @@ const Login: React.FC = () => {
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-medium py-3 rounded-lg hover:from-blue-600 hover:to-cyan-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </button>
         </form>
 

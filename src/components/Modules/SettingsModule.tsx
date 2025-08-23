@@ -1,88 +1,130 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Settings, 
-  Volume2, 
-  Mic, 
-  Brain, 
-  Database,
+import React, { useEffect, useState } from "react";
+import {
+  Volume2,
+  Brain,
   Palette,
   Shield,
   Download,
-  Upload,
-  RotateCcw
-} from 'lucide-react';
+  RotateCcw,
+} from "lucide-react";
+
+type SettingsType = {
+  voice: {
+    outputVolume: number;
+    inputSensitivity: number;
+    voiceModel: string;
+    speechRate: number;
+    enabled: boolean;
+  };
+  ai: {
+    model: string;
+    temperature: number;
+    maxTokens: number;
+    memoryRetention: number;
+    learningMode: boolean;
+  };
+  security: {
+    sessionTimeout: number;
+    autoBackup: boolean;
+    backupInterval: number;
+    encryptionLevel: string;
+  };
+  interface: {
+    theme: string;
+    fontSize: string;
+    animations: boolean;
+    compactMode: boolean;
+  };
+};
 
 const SettingsModule: React.FC = () => {
-  const DEFAULT_SETTINGS = {
+  const DEFAULT_SETTINGS: SettingsType = {
     voice: {
       outputVolume: 75,
       inputSensitivity: 60,
-      voiceModel: 'natural-female',
+      voiceModel: "natural-female",
       speechRate: 1.0,
-      enabled: true
+      enabled: true,
     },
     ai: {
-      model: 'local-llm',
+      model: "local-llm",
       temperature: 0.7,
       maxTokens: 2048,
       memoryRetention: 90,
-      learningMode: true
+      learningMode: true,
     },
     security: {
       sessionTimeout: 30,
       autoBackup: true,
       backupInterval: 24,
-      encryptionLevel: 'high'
+      encryptionLevel: "high",
     },
     interface: {
-      theme: 'futuristic',
-      fontSize: 'medium',
+      theme: "futuristic",
+      fontSize: "medium",
       animations: true,
-      compactMode: false
-    }
+      compactMode: false,
+    },
   };
 
-  const [settings, setSettings] = useState(() => {
+  const [settings, setSettings] = useState<SettingsType>(() => {
     try {
-      const saved = localStorage.getItem('miia.settings');
+      const saved = localStorage.getItem("miia.settings");
       return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
     } catch {
+      // Ignorar errores de lectura de localStorage
       return DEFAULT_SETTINGS;
     }
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem('miia.settings', JSON.stringify(settings));
-    } catch {}
+      localStorage.setItem("miia.settings", JSON.stringify(settings));
+    } catch {
+      // Ignorar errores de escritura en localStorage
+    }
   }, [settings]);
 
-  const updateSetting = (category: string, key: string, value: any) => {
-    setSettings(prev => ({
+  const updateSetting = <
+    K extends keyof SettingsType,
+    P extends keyof SettingsType[K],
+  >(
+    category: K,
+    key: P,
+    value: SettingsType[K][P],
+  ) => {
+    setSettings((prev) => ({
       ...prev,
       [category]: {
-        ...prev[category as keyof typeof prev],
-        [key]: value
-      }
+        ...(prev[category] as SettingsType[K]),
+        [key]: value,
+      },
     }));
   };
 
   const exportSettings = () => {
     const dataStr = JSON.stringify(settings, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = 'miia-settings.json';
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
+    const dataUri =
+      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+    const exportFileDefaultName = "miia-settings.json";
+
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
     linkElement.click();
   };
 
   const resetSettings = () => {
-    if (confirm('¿Estás seguro de que quieres restablecer todas las configuraciones?')) {
+    if (
+      confirm(
+        "¿Estás seguro de que quieres restablecer todas las configuraciones?",
+      )
+    ) {
       try {
-        localStorage.removeItem('miia.settings');
-      } catch {}
+        localStorage.removeItem("miia.settings");
+      } catch {
+        // Ignorar errores al limpiar localStorage
+      }
       setSettings(DEFAULT_SETTINGS);
     }
   };
@@ -93,8 +135,12 @@ const SettingsModule: React.FC = () => {
       <div className="glass-morphism rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Configuración de MiiA</h1>
-            <p className="text-blue-200">Personaliza mi comportamiento y capacidades</p>
+            <h1 className="text-2xl font-bold text-white">
+              Configuración de MiiA
+            </h1>
+            <p className="text-blue-200">
+              Personaliza mi comportamiento y capacidades
+            </p>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -121,7 +167,7 @@ const SettingsModule: React.FC = () => {
           <Volume2 className="w-5 h-5 mr-2" />
           Configuración de Voz
         </h2>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -132,7 +178,9 @@ const SettingsModule: React.FC = () => {
               min="0"
               max="100"
               value={settings.voice.outputVolume}
-              onChange={(e) => updateSetting('voice', 'outputVolume', parseInt(e.target.value))}
+              onChange={(e) =>
+                updateSetting("voice", "outputVolume", parseInt(e.target.value))
+              }
               className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
             />
             <div className="text-right text-sm text-blue-300 mt-1">
@@ -149,7 +197,13 @@ const SettingsModule: React.FC = () => {
               min="0"
               max="100"
               value={settings.voice.inputSensitivity}
-              onChange={(e) => updateSetting('voice', 'inputSensitivity', parseInt(e.target.value))}
+              onChange={(e) =>
+                updateSetting(
+                  "voice",
+                  "inputSensitivity",
+                  parseInt(e.target.value),
+                )
+              }
               className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
             />
             <div className="text-right text-sm text-blue-300 mt-1">
@@ -163,7 +217,9 @@ const SettingsModule: React.FC = () => {
             </label>
             <select
               value={settings.voice.voiceModel}
-              onChange={(e) => updateSetting('voice', 'voiceModel', e.target.value)}
+              onChange={(e) =>
+                updateSetting("voice", "voiceModel", e.target.value)
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="natural-female">Femenina Natural</option>
@@ -183,7 +239,9 @@ const SettingsModule: React.FC = () => {
               max="2.0"
               step="0.1"
               value={settings.voice.speechRate}
-              onChange={(e) => updateSetting('voice', 'speechRate', parseFloat(e.target.value))}
+              onChange={(e) =>
+                updateSetting("voice", "speechRate", parseFloat(e.target.value))
+              }
               className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
             />
             <div className="text-right text-sm text-blue-300 mt-1">
@@ -199,7 +257,7 @@ const SettingsModule: React.FC = () => {
           <Brain className="w-5 h-5 mr-2" />
           Configuración de IA
         </h2>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -207,7 +265,7 @@ const SettingsModule: React.FC = () => {
             </label>
             <select
               value={settings.ai.model}
-              onChange={(e) => updateSetting('ai', 'model', e.target.value)}
+              onChange={(e) => updateSetting("ai", "model", e.target.value)}
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="local-llm">Modelo Local (Recomendado)</option>
@@ -227,7 +285,9 @@ const SettingsModule: React.FC = () => {
               max="1"
               step="0.1"
               value={settings.ai.temperature}
-              onChange={(e) => updateSetting('ai', 'temperature', parseFloat(e.target.value))}
+              onChange={(e) =>
+                updateSetting("ai", "temperature", parseFloat(e.target.value))
+              }
               className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
             />
             <div className="text-right text-sm text-blue-300 mt-1">
@@ -244,7 +304,9 @@ const SettingsModule: React.FC = () => {
               min="256"
               max="4096"
               value={settings.ai.maxTokens}
-              onChange={(e) => updateSetting('ai', 'maxTokens', parseInt(e.target.value))}
+              onChange={(e) =>
+                updateSetting("ai", "maxTokens", parseInt(e.target.value))
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -258,7 +320,9 @@ const SettingsModule: React.FC = () => {
               min="1"
               max="365"
               value={settings.ai.memoryRetention}
-              onChange={(e) => updateSetting('ai', 'memoryRetention', parseInt(e.target.value))}
+              onChange={(e) =>
+                updateSetting("ai", "memoryRetention", parseInt(e.target.value))
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -269,7 +333,9 @@ const SettingsModule: React.FC = () => {
             <input
               type="checkbox"
               checked={settings.ai.learningMode}
-              onChange={(e) => updateSetting('ai', 'learningMode', e.target.checked)}
+              onChange={(e) =>
+                updateSetting("ai", "learningMode", e.target.checked)
+              }
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
             />
             <span className="text-blue-200">Modo de aprendizaje continuo</span>
@@ -283,7 +349,7 @@ const SettingsModule: React.FC = () => {
           <Shield className="w-5 h-5 mr-2" />
           Configuración de Seguridad
         </h2>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -294,7 +360,13 @@ const SettingsModule: React.FC = () => {
               min="5"
               max="120"
               value={settings.security.sessionTimeout}
-              onChange={(e) => updateSetting('security', 'sessionTimeout', parseInt(e.target.value))}
+              onChange={(e) =>
+                updateSetting(
+                  "security",
+                  "sessionTimeout",
+                  parseInt(e.target.value),
+                )
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -308,7 +380,13 @@ const SettingsModule: React.FC = () => {
               min="1"
               max="168"
               value={settings.security.backupInterval}
-              onChange={(e) => updateSetting('security', 'backupInterval', parseInt(e.target.value))}
+              onChange={(e) =>
+                updateSetting(
+                  "security",
+                  "backupInterval",
+                  parseInt(e.target.value),
+                )
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -319,7 +397,9 @@ const SettingsModule: React.FC = () => {
             </label>
             <select
               value={settings.security.encryptionLevel}
-              onChange={(e) => updateSetting('security', 'encryptionLevel', e.target.value)}
+              onChange={(e) =>
+                updateSetting("security", "encryptionLevel", e.target.value)
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="basic">Básico</option>
@@ -334,7 +414,9 @@ const SettingsModule: React.FC = () => {
               <input
                 type="checkbox"
                 checked={settings.security.autoBackup}
-                onChange={(e) => updateSetting('security', 'autoBackup', e.target.checked)}
+                onChange={(e) =>
+                  updateSetting("security", "autoBackup", e.target.checked)
+                }
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-blue-200">Backup automático</span>
@@ -349,7 +431,7 @@ const SettingsModule: React.FC = () => {
           <Palette className="w-5 h-5 mr-2" />
           Configuración de Interfaz
         </h2>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -357,7 +439,9 @@ const SettingsModule: React.FC = () => {
             </label>
             <select
               value={settings.interface.theme}
-              onChange={(e) => updateSetting('interface', 'theme', e.target.value)}
+              onChange={(e) =>
+                updateSetting("interface", "theme", e.target.value)
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="futuristic">Futurista (Actual)</option>
@@ -373,7 +457,9 @@ const SettingsModule: React.FC = () => {
             </label>
             <select
               value={settings.interface.fontSize}
-              onChange={(e) => updateSetting('interface', 'fontSize', e.target.value)}
+              onChange={(e) =>
+                updateSetting("interface", "fontSize", e.target.value)
+              }
               className="w-full bg-slate-800 border border-blue-500/30 rounded-lg text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="small">Pequeña</option>
@@ -388,7 +474,9 @@ const SettingsModule: React.FC = () => {
               <input
                 type="checkbox"
                 checked={settings.interface.animations}
-                onChange={(e) => updateSetting('interface', 'animations', e.target.checked)}
+                onChange={(e) =>
+                  updateSetting("interface", "animations", e.target.checked)
+                }
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-blue-200">Animaciones suaves</span>
@@ -400,7 +488,9 @@ const SettingsModule: React.FC = () => {
               <input
                 type="checkbox"
                 checked={settings.interface.compactMode}
-                onChange={(e) => updateSetting('interface', 'compactMode', e.target.checked)}
+                onChange={(e) =>
+                  updateSetting("interface", "compactMode", e.target.checked)
+                }
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-blue-200">Modo compacto</span>

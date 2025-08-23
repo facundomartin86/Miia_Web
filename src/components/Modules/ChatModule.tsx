@@ -1,30 +1,30 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { Send, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
 interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'ai';
+  sender: "user" | "ai";
   timestamp: Date;
 }
 
 const ChatModule: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
-      text: '¡Hola! Soy MiiA, tu inteligencia artificial personal. ¿En qué puedo ayudarte hoy?',
-      sender: 'ai',
-      timestamp: new Date()
-    }
+      id: "1",
+      text: "¡Hola! Soy MiiA, tu inteligencia artificial personal. ¿En qué puedo ayudarte hoy?",
+      sender: "ai",
+      timestamp: new Date(),
+    },
   ]);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -37,12 +37,12 @@ const ChatModule: React.FC = () => {
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputText,
-      sender: 'user',
-      timestamp: new Date()
+      sender: "user",
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputText("");
     setIsTyping(true);
 
     // Simular respuesta de IA (aquí se conectaría con el backend)
@@ -50,10 +50,10 @@ const ChatModule: React.FC = () => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: `Entiendo tu mensaje: "${inputText}". Esta es una respuesta de ejemplo. En la implementación completa, aquí procesaría tu solicitud usando modelos de IA y mi memoria local.`,
-        sender: 'ai',
-        timestamp: new Date()
+        sender: "ai",
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, aiResponse]);
       setIsTyping(false);
     }, 2000);
   };
@@ -66,11 +66,13 @@ const ChatModule: React.FC = () => {
   const handleTextToSpeech = (text: string) => {
     setIsSpeaking(true);
     // Aquí se implementaría la síntesis de voz
-    setTimeout(() => setIsSpeaking(false), 3000);
+    // Usar la longitud del texto para simular la duración del habla (50ms por carácter, máx 5s)
+    const duration = Math.min(5000, Math.max(1000, text.length * 50));
+    setTimeout(() => setIsSpeaking(false), duration);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -83,7 +85,9 @@ const ChatModule: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Chat con MiiA</h1>
-            <p className="text-blue-200">Conversación inteligente • Texto y Voz</p>
+            <p className="text-blue-200">
+              Conversación inteligente • Texto y Voz
+            </p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 bg-green-500/20 px-3 py-1 rounded-full">
@@ -100,13 +104,13 @@ const ChatModule: React.FC = () => {
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-[80%] p-4 rounded-2xl ${
-                  message.sender === 'user'
-                    ? 'chat-bubble-user text-white'
-                    : 'chat-bubble-ai text-white'
+                  message.sender === "user"
+                    ? "chat-bubble-user text-white"
+                    : "chat-bubble-ai text-white"
                 }`}
               >
                 <p className="leading-relaxed">{message.text}</p>
@@ -114,7 +118,7 @@ const ChatModule: React.FC = () => {
                   <span className="text-xs opacity-70">
                     {message.timestamp.toLocaleTimeString()}
                   </span>
-                  {message.sender === 'ai' && (
+                  {message.sender === "ai" && (
                     <button
                       onClick={() => handleTextToSpeech(message.text)}
                       className="text-cyan-300 hover:text-cyan-200 transition-colors"
@@ -136,8 +140,14 @@ const ChatModule: React.FC = () => {
               <div className="chat-bubble-ai p-4 rounded-2xl">
                 <div className="flex space-x-1">
                   <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div
+                    className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -164,11 +174,15 @@ const ChatModule: React.FC = () => {
               onClick={handleVoiceInput}
               className={`p-3 rounded-lg transition-all ${
                 isListening
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-slate-700 hover:bg-slate-600 text-blue-300'
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-slate-700 hover:bg-slate-600 text-blue-300"
               }`}
             >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              {isListening ? (
+                <MicOff className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
             </button>
             <button
               onClick={handleSendMessage}

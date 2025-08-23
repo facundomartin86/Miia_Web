@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface User {
   id: string;
@@ -18,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -32,7 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const storedAuth = localStorage.getItem('miia_auth');
+    const storedAuth = localStorage.getItem("miia_auth");
     if (storedAuth) {
       const authData = JSON.parse(storedAuth);
       setIsAuthenticated(true);
@@ -40,18 +46,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (
+    username: string,
+    password: string,
+  ): Promise<boolean> => {
     // Simple authentication - en producción esto debería ser más seguro
-    if (username === 'admin' && password === 'miia2025') {
+    if (username === "admin" && password === "miia2025") {
       const userData = {
-        id: '1',
-        username: 'admin',
-        name: 'Usuario Principal'
+        id: "1",
+        username: "admin",
+        name: "Usuario Principal",
       };
-      
+
       setIsAuthenticated(true);
       setUser(userData);
-      localStorage.setItem('miia_auth', JSON.stringify({ user: userData }));
+      localStorage.setItem("miia_auth", JSON.stringify({ user: userData }));
       return true;
     }
     return false;
@@ -60,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
-    localStorage.removeItem('miia_auth');
+    localStorage.removeItem("miia_auth");
   };
 
   return (
