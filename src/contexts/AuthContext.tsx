@@ -19,6 +19,8 @@ interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  // Indica si se está restaurando/validando la sesión al inicio
+  isInitializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,6 +41,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -46,9 +49,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (API_BASE) {
       const token = getToken();
       if (!token) {
+        // No hay sesión previa
+        setIsInitializing(false);
         return () => {
           mounted = false;
-        }; // No hay sesión previa
+        };
       }
 
       (async () => {
@@ -74,6 +79,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           localStorage.removeItem("miia_auth");
           clearToken();
+        } finally {
+          if (mounted) setIsInitializing(false);
         }
       })();
       return () => {
@@ -88,6 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(true);
       setUser(authData.user);
     }
+    setIsInitializing(false);
   }, []);
 
   const login = async (
@@ -137,7 +145,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, login, logout, isInitializing }}
+    >
       {children}
     </AuthContext.Provider>
   );

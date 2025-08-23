@@ -7,8 +7,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
   const location = useLocation();
+
+  // Mientras se valida/restaura la sesión, no redirigir
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8">
+        <div className="animate-pulse text-blue-200">Restaurando sesión...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     const returnTo = encodeURIComponent(location.pathname + location.search);

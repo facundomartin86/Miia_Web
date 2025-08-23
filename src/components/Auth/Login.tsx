@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Lock, User } from "lucide-react";
+import { API_BASE } from "../../services/api";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -19,7 +20,13 @@ const Login: React.FC = () => {
 
     const success = await login(username, password);
     if (!success) {
-      setError("Credenciales incorrectas. Intenta de nuevo.");
+      if (API_BASE) {
+        setError(
+          "No se pudo iniciar sesión. Verifica tus credenciales o la disponibilidad del backend.",
+        );
+      } else {
+        setError("Credenciales incorrectas. Intenta de nuevo.");
+      }
     } else {
       const params = new URLSearchParams(location.search);
       const returnTo = params.get("returnTo");
@@ -45,6 +52,14 @@ const Login: React.FC = () => {
           <h1 className="text-3xl font-bold text-white mb-2">MiiA</h1>
           <p className="text-blue-200">Mi Inteligencia Artificial</p>
         </div>
+
+        {!API_BASE && (
+          <div className="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-blue-200 text-sm">
+            Modo desarrollo sin backend configurado. Puedes ingresar con{" "}
+            <span className="font-semibold">admin</span> /{" "}
+            <span className="font-semibold">miia2025</span>.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -97,8 +112,12 @@ const Login: React.FC = () => {
         </form>
 
         <div className="mt-6 text-center text-sm text-blue-300">
-          <p>Usuario de prueba: admin</p>
-          <p>Contraseña: miia2025</p>
+          {!API_BASE && (
+            <>
+              <p>Usuario de prueba: admin</p>
+              <p>Contraseña: miia2025</p>
+            </>
+          )}
         </div>
       </div>
     </div>
