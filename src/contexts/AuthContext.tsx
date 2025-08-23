@@ -5,7 +5,8 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { API_BASE, authLogin, clearToken } from "../services/api";
+import { API_BASE, authLogin, clearToken, authMe } from "../services/api";
+import { getToken } from "../services/api";
 
 interface User {
   id: string;
@@ -40,6 +41,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // Si hay backend configurado, validar token con /auth/me
+    if (API_BASE) {
+      const token = getToken();
+      if (!token) {
+        return; // No hay sesión previa
+      }
+
+      (async () => {
+        try {
+          const res = await authMe();
+          const userData = {
+            id: res.user.id,
+            username: res.user.username,
+            name: res.user.name,
+          };
+          setIsAuthenticated(true);
+          setUser(userData);
+          localStorage.setItem("miia_auth", JSON.stringify({ user: userData }));
+        } catch {
+          // Si la validación falla, limpiar sesión y token
+          setIsAuthenticated(false);
+          setUser(null);
+          localStorage.removeItem("miia_auth");
+          clearToken();
+        }
+      })();
+      return;
+    }
+
+    // Si no hay backend, restaurar sesión mock si existe
     const storedAuth = localStorage.getItem("miia_auth");
     if (storedAuth) {
       const authData = JSON.parse(storedAuth);

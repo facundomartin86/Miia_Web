@@ -34,7 +34,7 @@ npm run test:watch  # tests en watch
 
 ## Estructura
 
-```
+```text
 MiiA_Web/
 ├─ docs/                  # documentación (prompt, arquitectura, roadmap)
 ├─ public/                # estáticos (imágenes, favicon)
@@ -54,6 +54,7 @@ MiiA_Web/
 
 - Variables: ver `docs/environment.md`.
 - Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL`.
+- Si `VITE_API_URL` está definida, al iniciar se valida la sesión con `GET /auth/me` usando el `miia_token`. Si falla, se limpia la sesión y no se usa mock. Sin backend, se usa el login/mock (admin/miia2025) y se restaura `miia_auth` local.
 
 ## CI
 

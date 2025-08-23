@@ -142,3 +142,14 @@ export async function authLogin(
   setToken(res.token);
   return res;
 }
+
+// Validación de sesión
+export interface MeResponse {
+  user: { id: string; username: string; name: string; role?: string };
+}
+
+export async function authMe(): Promise<MeResponse> {
+  // Usa token de Authorization adjuntado por request() cuando auth=true (por defecto)
+  const res = await api.get<MeResponse>("/auth/me");
+  return res;
+}
