@@ -9,6 +9,9 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # Default envs for CI; override via repo/environment secrets if needed
+      VITE_API_URL: ''
 
     steps:
       - name: Checkout
@@ -34,6 +37,4 @@ jobs:
 
       - name: Test
         run: npm test
-        env:
-          # Provide default envs for CI; override in repo secrets if needed
-          VITE_API_URL: ''
+        # No step-specific envs required; job-level env provides defaults.
