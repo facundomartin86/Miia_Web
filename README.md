@@ -28,6 +28,8 @@ npm run preview     # previsualizar build
 npm run lint        # linting con ESLint
 npm run format      # formateo con Prettier
 npm run typecheck   # verificación de tipos (TypeScript)
+npm test            # ejecutar tests (Vitest)
+npm run test:watch  # tests en watch
 ```
 
 ## Estructura
@@ -47,6 +49,20 @@ MiiA_Web/
 ├─ package.json
 └─ vite.config.ts
 ```
+
+## Entorno
+
+- Variables: ver `docs/environment.md`.
+- Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL`.
+
+## CI
+
+- GitHub Actions ejecuta lint, typecheck, build y tests en `main` y `develop`.
+- Workflow: `.github/workflows/ci.yml`.
+
+## Documentación de Módulos
+
+- Análisis y plan por fases: `docs/modules.md`.
 
 ## Flujo de trabajo (Git Flow clásico)
 
