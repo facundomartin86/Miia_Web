@@ -67,21 +67,36 @@ async function request<T = unknown>(
     }
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: finalHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  // Timeout para evitar esperas indefinidas si el backend no responde
+  const TIMEOUT_MS = 10000; // 10s
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  const text = await res.text();
-  let data: unknown = undefined;
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      // Respuesta no-JSON; mantener texto crudo
-      data = text;
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: finalHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (error: unknown) {
+    // Mensaje claro para timeout
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("La solicitud excedió el tiempo de espera");
     }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  let data: unknown = undefined;
+  try {
+    // Preferir JSON cuando sea posible
+    data = await res.json();
+  } catch {
+    // Si no es JSON, tomar texto crudo (puede ser vacío)
+    data = await res.text();
   }
 
   if (!res.ok) {
@@ -139,7 +154,11 @@ export async function authLogin(
     { username, password },
     { auth: false },
   );
-  setToken(res.token);
+  if (res && res.token) {
+    setToken(res.token);
+  } else {
+    clearToken();
+  }
   return res;
 }
 
@@ -150,6 +169,5 @@ export interface MeResponse {
 
 export async function authMe(): Promise<MeResponse> {
   // Usa token de Authorization adjuntado por request() cuando auth=true (por defecto)
-  const res = await api.get<MeResponse>("/auth/me");
-  return res;
+  return await api.get<MeResponse>("/auth/me");
 }

@@ -41,16 +41,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     // Si hay backend configurado, validar token con /auth/me
     if (API_BASE) {
       const token = getToken();
       if (!token) {
-        return; // No hay sesión previa
+        return () => {
+          mounted = false;
+        }; // No hay sesión previa
       }
 
       (async () => {
         try {
           const res = await authMe();
+          if (!mounted) {
+            return;
+          }
           const userData = {
             id: res.user.id,
             username: res.user.username,
@@ -60,6 +66,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
           localStorage.setItem("miia_auth", JSON.stringify({ user: userData }));
         } catch {
+          if (!mounted) {
+            return;
+          }
           // Si la validación falla, limpiar sesión y token
           setIsAuthenticated(false);
           setUser(null);
@@ -67,7 +76,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           clearToken();
         }
       })();
-      return;
+      return () => {
+        mounted = false;
+      };
     }
 
     // Si no hay backend, restaurar sesión mock si existe
