@@ -8,6 +8,7 @@ import Login from "./components/Auth/Login";
 import Dashboard from "./components/Dashboard/Dashboard";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import "./App.css";
 
 function AppContent() {
@@ -22,7 +23,11 @@ function AppContent() {
         />
         <Route
           path="/dashboard/*"
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/"

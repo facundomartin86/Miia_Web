@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Lock, User } from "lucide-react";
 
@@ -8,6 +9,8 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +20,12 @@ const Login: React.FC = () => {
     const success = await login(username, password);
     if (!success) {
       setError("Credenciales incorrectas. Intenta de nuevo.");
+    } else {
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get("returnTo");
+      navigate(returnTo ? decodeURIComponent(returnTo) : "/dashboard", {
+        replace: true,
+      });
     }
 
     setIsLoading(false);
