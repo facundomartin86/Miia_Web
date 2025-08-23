@@ -7,8 +7,11 @@ import MemoryModule from "../Modules/MemoryModule";
 import SecurityModule from "../Modules/SecurityModule";
 import SettingsModule from "../Modules/SettingsModule";
 import DashboardHome from "./DashboardHome";
+import { useAuth } from "../../contexts/AuthContext";
+import { LogOut, User as UserIcon } from "lucide-react";
 
 const Dashboard: React.FC = () => {
+  const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem("miia.sidebarCollapsed");
@@ -41,6 +44,38 @@ const Dashboard: React.FC = () => {
           sidebarCollapsed ? "ml-16" : "ml-64"
         }`}
       >
+        {/* Header superior con usuario y logout */}
+        <div className="sticky top-0 z-10 backdrop-blur bg-slate-900/40 border-b border-blue-500/20">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="text-blue-200 text-sm">
+              {sidebarCollapsed ? (
+                <span className="font-semibold">MiiA</span>
+              ) : (
+                <>
+                  <span className="font-semibold">MiiA</span>
+                  <span className="opacity-70"> · Dashboard</span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-blue-200">
+                <UserIcon className="w-4 h-4" />
+                <span className="text-sm">
+                  {user ? user.name || user.username : "Usuario"}
+                </span>
+              </div>
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-200 border border-red-500/20 transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="p-6">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
