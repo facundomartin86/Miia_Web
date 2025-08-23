@@ -2,7 +2,6 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import {
-  Brain,
   MessageSquare,
   Globe,
   Database,
@@ -34,15 +33,19 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   return (
     <div
       className={`fixed left-0 top-0 h-full bg-slate-900/80 backdrop-blur-lg border-r border-blue-500/20 transition-all duration-300 z-50 ${
-        collapsed ? "w-16" : "w-64"
-      }`}
+        collapsed ? "w-20" : "w-64"
+      } flex flex-col pb-4`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-blue-500/20">
         {!collapsed && (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-teal-400 rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 p-1 rounded-xl overflow-hidden bg-slate-800/60 flex items-center justify-center">
+              <img
+                src="/miia_originalcyan.png"
+                alt="MiiA"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-lg font-bold gradient-text">MiiA</h1>
@@ -63,28 +66,30 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-3 space-y-1.5">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === "/dashboard"}
             className={({ isActive }) =>
-              `sidebar-nav-item flex items-center p-3 rounded-lg transition-all duration-200 ${
+              `sidebar-nav-item flex ${collapsed ? "items-center justify-center p-4" : "items-center p-3"} rounded-lg transition-all duration-200 ${
                 isActive
                   ? "bg-blue-500/20 text-blue-200 border-l-4 border-blue-400"
                   : "text-blue-300 hover:text-blue-200"
               }`
             }
           >
-            <item.icon className={`w-5 h-5 ${collapsed ? "" : "mr-3"}`} />
+            <item.icon
+              className={`${collapsed ? "w-8 h-8" : "w-5 h-5 mr-3"}`}
+            />
             {!collapsed && <span className="font-medium">{item.label}</span>}
           </NavLink>
         ))}
       </nav>
 
       {/* User & Logout */}
-      <div className="p-4 border-t border-blue-500/20">
+      <div className="mt-auto p-4 pb-6 border-t border-blue-500/20">
         {!collapsed && user && (
           <div className="mb-3 p-2 bg-slate-800/50 rounded-lg">
             <p className="text-sm text-blue-200 font-medium">{user.name}</p>
@@ -93,9 +98,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         )}
         <button
           onClick={logout}
-          className="sidebar-nav-item flex items-center w-full p-3 text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg transition-all"
+          className={`sidebar-nav-item flex ${collapsed ? "items-center justify-center p-4" : "items-center p-3"} w-full text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg transition-all`}
         >
-          <LogOut className={`w-5 h-5 ${collapsed ? "" : "mr-3"}`} />
+          <LogOut className={`${collapsed ? "w-8 h-8" : "w-5 h-5 mr-3"}`} />
           {!collapsed && <span>Cerrar Sesión</span>}
         </button>
       </div>

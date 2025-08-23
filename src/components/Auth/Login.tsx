@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { Brain, Lock, User } from "lucide-react";
+import { Lock, User } from "lucide-react";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -26,8 +26,12 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="glass-morphism rounded-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mb-4">
-            <Brain className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 overflow-hidden bg-slate-800/60">
+            <img
+              src="/miia_originalcyan.png"
+              alt="MiiA"
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">MiiA</h1>
           <p className="text-blue-200">Mi Inteligencia Artificial</p>
