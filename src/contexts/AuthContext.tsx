@@ -5,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import { API_BASE, authLogin, clearToken } from "../services/api";
 
 interface User {
   id: string;
@@ -21,6 +22,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -50,7 +52,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     username: string,
     password: string,
   ): Promise<boolean> => {
-    // Simple authentication - en producción esto debería ser más seguro
+    // If API is configured, try real backend authentication first
+    if (API_BASE) {
+      try {
+        const res = await authLogin(username, password);
+        const userData = {
+          id: res.user.id,
+          username: res.user.username,
+          name: res.user.name,
+        };
+        setIsAuthenticated(true);
+        setUser(userData);
+        localStorage.setItem("miia_auth", JSON.stringify({ user: userData }));
+        return true;
+      } catch {
+        // continuar y devolver false; no usar mock si se pretende backend y falló
+        return false;
+      }
+    }
+
+    // Fallback simple authentication (development only)
     if (username === "admin" && password === "miia2025") {
       const userData = {
         id: "1",
@@ -70,6 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem("miia_auth");
+    clearToken();
   };
 
   return (
