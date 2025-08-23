@@ -5,10 +5,20 @@ export interface Message {
   content: string;
 }
 
+export interface ChatOptions {
+  /** Simula latencia en milisegundos antes de responder */
+  simulateLatencyMs?: number;
+  /** Fuerza un error del proveedor para probar manejo de errores */
+  simulateError?: boolean;
+  /** Indica si se desea streaming (SSE) */
+  stream?: boolean;
+}
+
 export interface ChatRequest {
   conversationId?: string;
   messages: Message[];
   provider?: "mock"; // ampliable a "ollama" | "openai" | "hf"
+  options?: ChatOptions;
 }
 
 export interface ChatResponse {

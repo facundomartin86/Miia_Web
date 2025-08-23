@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { api } from "../../services/api";
+import { api, API_BASE } from "../../services/api";
 import { Send, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
 interface Message {
@@ -23,6 +23,11 @@ const ChatModule: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Controles de simulación/streaming
+  const [useStream, setUseStream] = useState(false);
+  const [simulateLatencyMs, setSimulateLatencyMs] = useState<number>(400);
+  const [simulateError, setSimulateError] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -64,19 +69,91 @@ const ChatModule: React.FC = () => {
           { role: "user", content: userMessage.text },
         ],
         provider: "mock" as const,
+        options: {
+          simulateLatencyMs,
+          simulateError,
+          stream: useStream,
+        },
       };
 
-      const res = await api.post<{
-        message: { role: string; content: string };
-      }>("/chat", payload, { auth: false });
+      if (useStream) {
+        // Streaming mediante fetch + lectura de SSE (POST /chat/stream)
+        const resp = await fetch(`${API_BASE}/chat/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!resp.ok || !resp.body) {
+          throw new Error("No se pudo iniciar el streaming");
+        }
 
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: res.message?.content || "(Sin respuesta)",
-        sender: "ai",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulated = "";
+        const aiId = (Date.now() + 1).toString();
+        // Crear mensaje AI vacío que iremos completando
+        setMessages((prev) => [
+          ...prev,
+          { id: aiId, text: "", sender: "ai", timestamp: new Date() },
+        ]);
+
+        const appendDelta = (delta: string) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiId ? { ...m, text: (m.text || "") + delta } : m,
+            ),
+          );
+        };
+
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          const chunk = decoder.decode(value, { stream: true });
+          accumulated += chunk;
+          // Analizar eventos SSE: líneas separadas por doble salto
+          const events = accumulated.split("\n\n");
+          // Mantener el último parcial en buffer
+          accumulated = events.pop() || "";
+          for (const evt of events) {
+            const line = evt.split("\n").find((l) => l.startsWith("data: "));
+            if (!line) {
+              continue;
+            }
+            const dataStr = line.slice("data: ".length);
+            if (dataStr === "[DONE]") {
+              // final
+              await reader.cancel();
+              break;
+            }
+            try {
+              const data = JSON.parse(dataStr) as { delta?: string } | string;
+              if (typeof data === "string") {
+                // mensajes tipo usage o control los ignoramos aquí
+                continue;
+              }
+              if (data.delta) {
+                appendDelta(data.delta);
+              }
+            } catch {
+              // ignorar líneas que no sean JSON válidos
+            }
+          }
+        }
+      } else {
+        const res = await api.post<{
+          message: { role: string; content: string };
+        }>("/chat", payload, { auth: false });
+
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: res.message?.content || "(Sin respuesta)",
+          sender: "ai",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      }
     } catch (error: unknown) {
       const msg =
         error instanceof Error
@@ -131,6 +208,41 @@ const ChatModule: React.FC = () => {
               <span className="text-green-300 text-sm">En línea</span>
             </div>
           </div>
+        </div>
+        {/* Controles de simulación */}
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <label className="flex items-center space-x-2 text-blue-200">
+            <input
+              type="checkbox"
+              checked={useStream}
+              onChange={(e) => setUseStream(e.target.checked)}
+            />
+            <span>Usar streaming (SSE)</span>
+          </label>
+          <label className="flex items-center space-x-2 text-blue-200">
+            <span>Latencia (ms):</span>
+            <input
+              type="number"
+              min={0}
+              max={30000}
+              value={simulateLatencyMs}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (!Number.isNaN(v)) {
+                  setSimulateLatencyMs(Math.min(30000, Math.max(0, v)));
+                }
+              }}
+              className="w-24 px-2 py-1 rounded bg-slate-800/50 border border-blue-500/30 text-blue-100"
+            />
+          </label>
+          <label className="flex items-center space-x-2 text-blue-200">
+            <input
+              type="checkbox"
+              checked={simulateError}
+              onChange={(e) => setSimulateError(e.target.checked)}
+            />
+            <span>Simular error</span>
+          </label>
         </div>
       </div>
 

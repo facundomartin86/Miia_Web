@@ -5,7 +5,7 @@ import { router as chatRouter } from "./routes/chat";
 import { errorHandler } from "./middleware/error";
 import { getConfig } from "./utils/config";
 
-const app = express();
+export const app = express();
 const config = getConfig();
 
 app.use(cors({ origin: config.corsOrigin, credentials: false }));
@@ -20,7 +20,9 @@ app.use("/chat", chatRouter);
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`MiiA server running on http://localhost:${config.port}`);
-});
+// Ejecutar servidor solo cuando se ejecuta directamente, no en tests
+if (typeof require !== "undefined" && require.main === module) {
+  app.listen(config.port, () => {
+    console.log(`MiiA server running on http://localhost:${config.port}`);
+  });
+}

@@ -1,0 +1,159 @@
+[1mdiff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml[m
+[1mnew file mode 100644[m
+[1mindex 0000000..3505160[m
+[1m--- /dev/null[m
+[1m+++ b/.github/workflows/ci.yml[m
+[36m@@ -0,0 +1,39 @@[m
+[32m+[m[32mname: CI[m
+[32m+[m
+[32m+[m[32mon:[m
+[32m+[m[32m  push:[m
+[32m+[m[32m    branches: [ main, develop ][m
+[32m+[m[32m  pull_request:[m
+[32m+[m[32m    branches: [ main, develop ][m
+[32m+[m
+[32m+[m[32mjobs:[m
+[32m+[m[32m  build-and-test:[m
+[32m+[m[32m    runs-on: ubuntu-latest[m
+[32m+[m
+[32m+[m[32m    steps:[m
+[32m+[m[32m      - name: Checkout[m
+[32m+[m[32m        uses: actions/checkout@v4[m
+[32m+[m
+[32m+[m[32m      - name: Setup Node.js[m
+[32m+[m[32m        uses: actions/setup-node@v4[m
+[32m+[m[32m        with:[m
+[32m+[m[32m          node-version: 20[m
+[32m+[m[32m          cache: 'npm'[m
+[32m+[m
+[32m+[m[32m      - name: Install dependencies[m
+[32m+[m[32m        run: npm ci[m
+[32m+[m
+[32m+[m[32m      - name: Lint[m
+[32m+[m[32m        run: npm run lint[m
+[32m+[m
+[32m+[m[32m      - name: Typecheck[m
+[32m+[m[32m        run: npm run typecheck[m
+[32m+[m
+[32m+[m[32m      - name: Build[m
+[32m+[m[32m        run: npm run build[m
+[32m+[m
+[32m+[m[32m      - name: Test[m
+[32m+[m[32m        run: npm test[m
+[32m+[m[32m        env:[m
+[32m+[m[32m          # Provide default envs for CI; override in repo secrets if needed[m
+[32m+[m[32m          VITE_API_URL: ''[m
+[1mdiff --git a/docs/modules.md b/docs/modules.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..04cf09b[m
+[1m--- /dev/null[m
+[1m+++ b/docs/modules.md[m
+[36m@@ -0,0 +1,108 @@[m
+[32m+[m[32m# Análisis de Módulos del Dashboard[m
+[32m+[m
+[32m+[m[32mEste documento resume el estado actual de los módulos principales de la app (Inicio, Chat, Navegador, Memoria, Seguridad, Configuración), sus objetos UI/estado, funcionalidades existentes, faltantes y plan de desarrollo propuesto por fases.[m
+[32m+[m
+[32m+[m[32m## Inicio (`DashboardHome`)[m
+[32m+[m
+[32m+[m[32m- **Objetos/Componentes**: tarjetas de módulos, métricas/resumen, accesos rápidos.[m
+[32m+[m[32m- **Estado**: estático (mock de estadísticas y acciones).[m
+[32m+[m[32m- **Faltantes**:[m
+[32m+[m[32m  - Datos reales de uso (nº chats, items de memoria, estado de seguridad).[m
+[32m+[m[32m  - Acciones rápidas contextuales (último chat, última URL).[m
+[32m+[m[32m- **Plan**:[m
+[32m+[m[32m  - Fase 1: Fuente de datos desde `localStorage`/contextos.[m
+[32m+[m[32m  - Fase 2: Endpoint backend `/stats` consolidado y polling/lazy fetch.[m
+[32m+[m
+[32m+[m[32m## Chat (`ChatModule`)[m
+[32m+[m
+[32m+[m[32m- **Objetos/Estado**: lista `messages`, input de texto, estados de voz (escucha/habla), placeholders de TTS/STT.[m
+[32m+[m[32m- **Existente**: simulación de respuesta IA, UI de conversación, controles básicos.[m
+[32m+[m[32m- **Faltantes**:[m
+[32m+[m[32m  - Integración real con backend LLM/adapter (`POST /chat`).[m
+[32m+[m[32m  - Historial persistente por conversación, títulos automáticos.[m
+[32m+[m[32m  - Adjuntos (archivos/imágenes) y streaming de tokens.[m
+[32m+[m[32m  - Comandos/acciones (crear nota, guardar en memoria).[m
+[32m+[m[32m- **Plan**:[m
+[32m+[m[32m  - Fase 1: `POST /chat` (texto->texto) + persistencia local por `conversationId`.[m
+[32m+[m[32m  - Fase 2: streaming SSE/WebSocket; adjuntos; comandos con router de herramientas.[m
+[32m+[m
+[32m+[m[32m## Navegador (`BrowserModule`)[m
+[32m+[m
+[32m+[m[32m- **Objetos/Estado**: `url`, modo análisis, resultados/insights, botones "Aprender"/"Extraer".[m
+[32m+[m[32m- **Existente**: simulación de carga/análisis.[m
+[32m+[m[32m- **Faltantes**:[m
+[32m+[m[32m  - Backend de scraping/resumen (`GET /browser/fetch?url=...`).[m
+[32m+[m[32m  - Extractor de datos (metadatos, enlaces, tablas) y guardar a Memoria.[m
+[32m+[m[32m  - Manejo de errores (CORS, timeouts, URL inválida) y cacheo.[m
+[32m+[m[32m- **Plan**:[m
+[32m+[m[32m  - Fase 1: fetch + resumen + UI de estados.[m
+[32m+[m[32m  - Fase 2: extracción estructurada + export (CSV/JSON) + vinculación con Memoria.[m
+[32m+[m
+[32m+[m[32m## Memoria (`MemoryModule`)[m
+[32m+[m
+[32m+[m[32m- **Objetos/Estado**: lista de items con `id`, `type`, `tags`, `size`, filtros, búsqueda.[m
+[32m+[m[32m- **Existente**: render de items mock, filtros locales, acciones (descargar, borrar) simuladas.[m
+[32m+[m[32m- **Faltantes**:[m
+[32m+[m[32m  - CRUD real: `GET/POST/DELETE /memory`, subida de archivos, descarga con permisos.[m
+[32m+[m[32m  - Indexación/búsqueda semántica (más adelante), etiquetas persistentes.[m
+[32m+[m[32m  - Paginación y tamaños reales.[m
+[32m+[m[32m- **Plan**:[m
+[32m+[m[32m  - Fase 1: CRUD REST con validación y toasts de feedback.[m
+[32m+[m[32m  - Fase 2: búsqueda avanzada (servidor) y adjuntar a Chat.[m
+[32m+[m
+[32m+[m[32m## Seguridad (`SecurityModule`)[m
+[32m+[m
+[32m+[m[32m- **Objetos/Estado**: toggles (firewall, cifrado, monitoreo, auto-defensa), eventos recientes, puntaje.[m
+[32m+[m[32m- **Existente**: UI y estado local, lista mock de eventos.[m
+[32m+[m[32m- **Faltantes**:[m
+[32m+[m[32m  - Persistencia de configuración por usuario (`/security/settings`).[m
+[32m+[m[32m  - Fuente real de eventos (`/security/events`) y severidad.[m
+[32m+[m[32m  - Pruebas automáticas de salud/seguridad y recomendaciones.[m
+[32m+[m[32m- **Plan**:[m
+[32m+[m[32m  - Fase 1: persistencia + feed de eventos (mock server o backend real).[m
+[32m+[m[32m  - Fase 2: análisis y recomendaciones con scoring dinámico.[m
+[32m+[m
+[32m+[m[32m## Configuración (`SettingsModule`)[m
+[32m+[m
+[32m+[m[32m- **Objetos/Estado**: secciones (voz, IA, seguridad, UI), export/reset, `miia.settings` en `localStorage`.[m
+[32m+[m[32m- **Existente**: UI completa y persistencia local.[m
+[32m+[m[32m- **Faltantes**:[m
+[32m+[m[32m  - Sincronización con backend por usuario/rol (`/settings/me`).[m
+[32m+[m[32m  - Import/export firmado y validado; migraciones de esquema.[m
+[32m+[m[32m- **Plan**:[m
+[32m+[m[32m  - Fase 1: `/settings/me` GET/PUT con validación.[m
+[32m+[m[32m  - Fase 2: versiones de esquema, import/export JSON firmado.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# Plan de Desarrollo por Fases[m
+[32m+[m
+[32m+[m[32m- **Fase A: Autenticación (en curso)**[m
+[32m+[m[32m  - `/auth/login` (JWT), `/auth/me` (opcional), roles (admin/user).[m
+[32m+[m[32m  - Frontend: `AuthContext` ya preparado para backend con `VITE_API_URL`.[m
+[32m+[m
+[32m+[m[32m- **Fase B: Chat básico**[m
+[32m+[m[32m  - `POST /chat` (no streaming). Persistencia local por conversación. Tests de UI.[m
+[32m+[m
+[32m+[m[32m- **Fase C: Navegador básico**[m
+[32m+[m[32m  - `GET /browser/fetch` + resumen. Manejo de errores y timeouts.[m
+[32m+[m
+[32m+[m[32m- **Fase D: Memoria CRUD**[m
+[32m+[m[32m  - `GET/POST/DELETE /memory` con paginación. UI de toasts/confirm.[m
+[32m+[m
+[32m+[m[32m- **Fase E: Seguridad settings + eventos**[m
+[32m+[m[32m  - Persistencia de toggles + feed de eventos inicial.[m
+[32m+[m
+[32m+[m[32m- **Fase F: Configuración backend**[m
+[32m+[m[32m  - `/settings/me` + export/import básico.[m
+[32m+[m
+[32m+[m[32m---[m
+[32m+[m
+[32m+[m[32m# Criterios de Aceptación (por módulo)[m
+[32m+[m
+[32m+[m[32m- **Autenticación**: login válido devuelve token y usuario; rutas protegidas redirigen; logout limpia `miia_auth`/`miia_token`.[m
+[32m+[m[32m- **Chat**: enviar mensaje y recibir respuesta desde backend; historial visible; error UI si backend falla.[m
+[32m+[m[32m- **Navegador**: analizar URL válida y mostrar resumen; error claro en URL inválida/timeout.[m
+[32m+[m[32m- **Memoria**: crear, listar y borrar item; filtros y búsqueda funcionales.[m
+[32m+[m[32m- **Seguridad**: toggles persistentes entre sesiones; eventos listados desde backend/mock.[m
+[32m+[m[32m- **Configuración**: leer/guarda
