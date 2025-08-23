@@ -80,7 +80,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.removeItem("miia_auth");
           clearToken();
         } finally {
-          if (mounted) setIsInitializing(false);
+          if (mounted) {
+            setIsInitializing(false);
+          }
         }
       })();
       return () => {
