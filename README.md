@@ -46,6 +46,7 @@ MiiA_Web/
 │  ├─ contexts/
 │  ├─ App.tsx
 │  └─ main.tsx
+├─ server/                # backend Node.js + TypeScript (Express)
 ├─ package.json
 └─ vite.config.ts
 ```
@@ -55,6 +56,59 @@ MiiA_Web/
 - Variables: ver `docs/environment.md`.
 - Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL`.
 - Si `VITE_API_URL` está definida, al iniciar se valida la sesión con `GET /auth/me` usando el `miia_token`. Si falla, se limpia la sesión y no se usa mock. Sin backend, se usa el login/mock (admin/miia2025) y se restaura `miia_auth` local.
+
+## Backend (server)
+
+Backend mínimo en `server/` con Express (TypeScript), CORS y validación con Zod.
+
+### Requisitos (backend)
+
+- Node.js 18+
+
+### Instalación y ejecución
+
+```bash
+cd server
+npm install
+npm run dev      # desarrollo (nodemon + ts-node)
+# npm run build  # compilar a dist/
+# npm start      # ejecutar compilado
+```
+
+### Variables de entorno (server/.env)
+
+```env
+PORT=4000
+CORS_ORIGIN=http://localhost:5173
+```
+
+### Endpoints mínimos
+
+- `GET /health` → `{ status: "ok", version: "0.1.0" }`
+- `POST /chat` → proveedor mock por defecto
+
+Payload ejemplo (`POST /chat`):
+
+```json
+{
+  "messages": [{ "role": "user", "content": "Hola MiiA, ¿qué puedes hacer?" }],
+  "provider": "mock"
+}
+```
+
+Respuesta ejemplo:
+
+```json
+{
+  "message": { "role": "assistant", "content": "Entendido: \"Hola...\"" },
+  "usage": { "provider": "mock" }
+}
+```
+
+### Integración con el frontend (Chat)
+
+- Configurar en la raíz del proyecto: `./.env.local` con `VITE_API_URL=http://localhost:4000`.
+- El componente `src/components/Modules/ChatModule.tsx` envía el historial y el mensaje del usuario a `POST /chat` y muestra la respuesta.
 
 ## Autenticación
 

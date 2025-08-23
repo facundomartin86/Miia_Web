@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { api } from "../../services/api";
 import { Send, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
 interface Message {
@@ -32,7 +33,9 @@ const ChatModule: React.FC = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim()) {
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -45,17 +48,50 @@ const ChatModule: React.FC = () => {
     setInputText("");
     setIsTyping(true);
 
-    // Simular respuesta de IA (aquí se conectaría con el backend)
-    setTimeout(() => {
+    try {
+      // Construir payload para backend /chat
+      const payload = {
+        messages: [
+          {
+            role: "system",
+            content: "Eres MiiA, una IA personal de asistencia.",
+          },
+          // mapear historial relevante (opcional: enviar solo últimos N)
+          ...messages.slice(-5).map((m) => ({
+            role: m.sender === "user" ? "user" : "assistant",
+            content: m.text,
+          })),
+          { role: "user", content: userMessage.text },
+        ],
+        provider: "mock" as const,
+      };
+
+      const res = await api.post<{
+        message: { role: string; content: string };
+      }>("/chat", payload, { auth: false });
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: `Entiendo tu mensaje: "${inputText}". Esta es una respuesta de ejemplo. En la implementación completa, aquí procesaría tu solicitud usando modelos de IA y mi memoria local.`,
+        text: res.message?.content || "(Sin respuesta)",
         sender: "ai",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiResponse]);
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Error al conectar con el backend";
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: `Ocurrió un error: ${msg}`,
+        sender: "ai",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiResponse]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   const handleVoiceInput = () => {
