@@ -65,37 +65,52 @@ interface Message {
   timestamp: Date;
 }
 
-// Función para procesar markdown básico
+/**
+ * Procesador de markdown básico para respuestas de IA
+ * Convierte formato markdown simple a JSX con estilos
+ *
+ * Funcionalidades soportadas:
+ * - **negrita** → <strong>negrita</strong>
+ * - *cursiva* → <em>cursiva</em>
+ * - Listas numeradas con números resaltados en cyan
+ * - Preservación de saltos de línea
+ *
+ * @param text - Texto con formato markdown a procesar
+ * @returns JSX.Element con el contenido formateado
+ */
 const processMarkdown = (text: string): JSX.Element => {
   const lines = text.split("\n");
   const elements: JSX.Element[] = [];
 
   lines.forEach((line, index) => {
+    // Líneas vacías se convierten en saltos de línea
     if (line.trim() === "") {
       elements.push(<br key={`br-${index}`} />);
       return;
     }
 
-    // Procesar texto con formato
+    // Aplicar formato básico de markdown
     let processedLine = line;
 
-    // Reemplazar **texto** con <strong>texto</strong>
+    // Convertir **texto** a <strong>texto</strong>
     processedLine = processedLine.replace(
       /\*\*(.*?)\*\*/g,
       "<strong>$1</strong>",
     );
 
-    // Reemplazar *texto* con <em>texto</em>
+    // Convertir *texto* a <em>texto</em>
     processedLine = processedLine.replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-    // Detectar listas numeradas
+    // Detectar y procesar listas numeradas (formato: "1. texto")
     const numberedListMatch = line.match(/^(\d+)\.\s+(.+)/);
     if (numberedListMatch) {
       elements.push(
         <div key={`line-${index}`} className="mb-1">
+          {/* Número de lista resaltado en cyan */}
           <span className="font-semibold text-cyan-300">
             {numberedListMatch[1]}.
           </span>{" "}
+          {/* Contenido de la lista con formato aplicado */}
           <span
             dangerouslySetInnerHTML={{
               __html: numberedListMatch[2].replace(
@@ -109,7 +124,7 @@ const processMarkdown = (text: string): JSX.Element => {
       return;
     }
 
-    // Línea normal
+    // Línea normal con formato aplicado
     elements.push(
       <div key={`line-${index}`} className="mb-1">
         <span dangerouslySetInnerHTML={{ __html: processedLine }} />

@@ -115,6 +115,12 @@ Respuesta ejemplo:
 
 - Si quieres usar el backend real, configura en la raíz del proyecto: `./.env.local` con `VITE_API_URL=http://localhost:4000`.
 - El componente `src/components/Modules/ChatModule.tsx` envía el historial y el mensaje del usuario a `POST /chat` y muestra la respuesta. También soporta `POST /chat/stream` (SSE) cuando está activo el toggle "Usar streaming".
+- **Procesador de Markdown**: Las respuestas de la IA se renderizan con formato markdown básico:
+  - **Texto en negrita**: `**texto**` → **texto**
+  - _Texto en cursiva_: `*texto*` → _texto_
+  - Listas numeradas con números resaltados en cyan
+  - Preservación de saltos de línea
+- **Reconocimiento de voz**: Botón de micrófono para dictar mensajes usando Web Speech API
 - Selector de proveedor: `Auto (router)` | `Ollama` | `Mock`. En `Auto`, el backend elige un modelo en función del texto (heurística simple).
 - Cuando no hay backend (`VITE_API_URL` vacío/no definido), el Chat funciona en modo mock local: genera una respuesta simulada con latencia y, si se desea, error simulado. En este modo, el toggle de streaming aparece deshabilitado ya que requiere backend.
 
