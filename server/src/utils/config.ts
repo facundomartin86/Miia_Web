@@ -24,7 +24,7 @@ export function getConfig() {
     ollamaFallbackModel,
     routerGeneralModel,
     ollamaOptions: {
-      numPredict: Number.isFinite(numPredict) ? (numPredict as number) : 256,
+      numPredict: Number.isFinite(numPredict) ? (numPredict as number) : 2048,
       temperature: Number.isFinite(temperature) ? (temperature as number) : 0.6,
       topP: Number.isFinite(topP) ? (topP as number) : 0.9,
       keepAlive,
