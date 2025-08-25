@@ -21,24 +21,40 @@ export const ollamaProvider = {
   async generate(req: ChatRequest, model: string): Promise<ChatResponse> {
     const cfg = getConfig();
     const url = `${cfg.ollamaHost}/api/chat`;
-    const body: OllamaChatRequest = {
-      model,
+    const bodyBase = {
       messages: mapMessages(req.messages),
-      stream: false,
-    };
+    } as const;
 
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    async function attempt(withModel: string) {
+      const body: OllamaChatRequest = {
+        model: withModel,
+        messages: bodyBase.messages,
+        stream: false,
+      };
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return resp;
+    }
+
+    let resp = await attempt(model);
+    if (
+      !resp.ok &&
+      cfg.ollamaFallbackModel &&
+      cfg.ollamaFallbackModel !== model
+    ) {
+      // Reintentar con fallback
+      resp = await attempt(cfg.ollamaFallbackModel);
+      model = cfg.ollamaFallbackModel;
+    }
     if (!resp.ok) {
       throw new Error(`Ollama error: ${resp.status} ${resp.statusText}`);
     }
     const data = (await resp.json()) as {
       message: { role: Role | string; content: string };
     };
-
     return {
       message: {
         role: (data.message.role as Role) || "assistant",
@@ -55,17 +71,32 @@ export const ollamaProvider = {
   ) {
     const cfg = getConfig();
     const url = `${cfg.ollamaHost}/api/chat`;
-    const body: OllamaChatRequest = {
-      model,
-      messages: mapMessages(req.messages),
-      stream: true,
-    };
+    const base = { messages: mapMessages(req.messages) } as const;
 
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    async function start(withModel: string) {
+      const body: OllamaChatRequest = {
+        model: withModel,
+        messages: base.messages,
+        stream: true,
+      };
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return { r, usedModel: withModel } as const;
+    }
+
+    let { r: resp, usedModel } = await start(model);
+    if (
+      (!resp.ok || !resp.body) &&
+      cfg.ollamaFallbackModel &&
+      cfg.ollamaFallbackModel !== model
+    ) {
+      const retry = await start(cfg.ollamaFallbackModel);
+      resp = retry.r;
+      usedModel = retry.usedModel;
+    }
     if (!resp.ok || !resp.body) {
       throw new Error(`No se pudo iniciar stream con Ollama (${resp.status})`);
     }
@@ -95,7 +126,10 @@ export const ollamaProvider = {
             send({ delta: obj.message.content });
           }
           if (obj.done) {
-            send("[DONE]");
+            send({
+              done: true,
+              usage: { provider: "ollama", model: usedModel },
+            });
             res.end();
             return;
           }
