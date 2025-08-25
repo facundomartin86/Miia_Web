@@ -31,12 +31,11 @@ export const ollamaProvider = {
         messages: bodyBase.messages,
         stream: false,
       };
-      const resp = await fetch(url, {
+      return fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      return resp;
     }
 
     let resp = await attempt(model);
@@ -50,7 +49,15 @@ export const ollamaProvider = {
       model = cfg.ollamaFallbackModel;
     }
     if (!resp.ok) {
-      throw new Error(`Ollama error: ${resp.status} ${resp.statusText}`);
+      let extra = "";
+      try {
+        extra = await resp.text();
+      } catch {
+        // ignore
+      }
+      throw new Error(
+        `Ollama error: ${resp.status} ${resp.statusText}${extra ? ` - ${extra}` : ""}`,
+      );
     }
     const data = (await resp.json()) as {
       message: { role: Role | string; content: string };
@@ -98,7 +105,15 @@ export const ollamaProvider = {
       usedModel = retry.usedModel;
     }
     if (!resp.ok || !resp.body) {
-      throw new Error(`No se pudo iniciar stream con Ollama (${resp.status})`);
+      let extra = "";
+      try {
+        extra = await resp.text();
+      } catch {
+        // ignore
+      }
+      throw new Error(
+        `No se pudo iniciar stream con Ollama (${resp.status})${extra ? ` - ${extra}` : ""}`,
+      );
     }
 
     res.setHeader("Content-Type", "text/event-stream");

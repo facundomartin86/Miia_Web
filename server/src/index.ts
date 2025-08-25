@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -7,6 +8,7 @@ import { errorHandler } from "./middleware/error";
 import { getConfig } from "./utils/config";
 
 export const app = express();
+dotenv.config();
 const config = getConfig();
 
 app.use(cors({ origin: config.corsOrigin, credentials: false }));
@@ -24,7 +26,13 @@ app.use(errorHandler);
 
 // Ejecutar servidor solo cuando se ejecuta directamente, no en tests
 if (typeof require !== "undefined" && require.main === module) {
-  app.listen(config.port, () => {
-    console.log(`MiiA server running on http://localhost:${config.port}`);
+  const host = "127.0.0.1"; // evitar issues con IPv6/localhost en Windows
+  const server = app.listen(config.port, host, () => {
+    const addr = server.address();
+    if (typeof addr === "object" && addr) {
+      console.log(`MiiA server running on http://${addr.address}:${addr.port}`);
+    } else {
+      console.log(`MiiA server running on port ${config.port}`);
+    }
   });
 }

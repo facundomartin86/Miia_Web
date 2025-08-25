@@ -29,6 +29,16 @@ export default tseslint.config(
           allowTaggedTemplates: true,
         },
       ],
+      // Ignorar variables/parámetros capturados que comiencen con "_" (p. ej. _req, _next)
+      // para indicar intencionalmente que no se usan.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
