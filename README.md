@@ -83,6 +83,8 @@ PORT=4000
 CORS_ORIGIN=http://localhost:5173
 # Inferencia local Ollama (sin tokens)
 OLLAMA_HOST=http://localhost:11434
+# Modelo de fallback si el seleccionado no está instalado/disponible
+OLLAMA_FALLBACK_MODEL=llama3.1:8b-instruct
 ```
 
 ### Endpoints mínimos
@@ -130,6 +132,8 @@ ollama pull deepseek-r1:7b
 
 1. Verifica `server/.env` → `OLLAMA_HOST=http://localhost:11434`.
 1. Ejecutar backend: `npm run dev` en `server/`.
+
+Nota: si un modelo elegido por el router no está disponible, el servidor reintentará automáticamente con `OLLAMA_FALLBACK_MODEL`.
 
 ## Autenticación
 
