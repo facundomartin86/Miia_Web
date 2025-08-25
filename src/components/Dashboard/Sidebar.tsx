@@ -20,6 +20,11 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const { logout, user } = useAuth();
+  type ImportMetaEnv = { VITE_APP_VERSION?: string };
+  type ImportMetaWithEnv = { env?: ImportMetaEnv };
+  const APP_VERSION: string =
+    (import.meta as unknown as ImportMetaWithEnv).env?.VITE_APP_VERSION ||
+    "v1.0.0";
 
   const navItems = [
     { icon: Home, label: "Inicio", path: "/dashboard" },
@@ -49,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             </div>
             <div>
               <h1 className="text-lg font-bold gradient-text">MiiA</h1>
-              <p className="text-xs text-blue-300">v1.0.0</p>
+              <p className="text-xs text-blue-300">{APP_VERSION}</p>
             </div>
           </div>
         )}
