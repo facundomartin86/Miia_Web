@@ -1,10 +1,18 @@
 // Cliente API liviano y utilidades de autenticación
 // Lee la URL base desde variables de Vite: VITE_API_URL
 
-type ImportMetaEnv = { VITE_API_URL?: string };
+type ImportMetaEnv = { VITE_API_URL?: string; VITE_API_TIMEOUT_MS?: string };
 type ImportMetaWithEnv = { env?: ImportMetaEnv };
 export const API_BASE: string =
   (import.meta as unknown as ImportMetaWithEnv).env?.VITE_API_URL || "";
+
+// Timeout global configurable para requests desde el frontend
+export const API_TIMEOUT_MS: number = (() => {
+  const raw = (import.meta as unknown as ImportMetaWithEnv).env
+    ?.VITE_API_TIMEOUT_MS;
+  const n = raw ? Number(raw) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 30000; // 30s por defecto
+})();
 
 const TOKEN_KEY = "miia_token";
 
@@ -41,6 +49,8 @@ interface RequestOptions {
   headers?: Record<string, string>;
   // Cuando es false, no adjuntar cabecera Authorization
   auth?: boolean;
+  // Permitir configurar timeout por petición (ms)
+  timeoutMs?: number;
 }
 
 async function request<T = unknown>(
@@ -68,7 +78,7 @@ async function request<T = unknown>(
   }
 
   // Timeout para evitar esperas indefinidas si el backend no responde
-  const TIMEOUT_MS = 10000; // 10s
+  const TIMEOUT_MS = options.timeoutMs ?? API_TIMEOUT_MS;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -83,7 +93,9 @@ async function request<T = unknown>(
   } catch (error: unknown) {
     // Mensaje claro para timeout
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("La solicitud excedió el tiempo de espera");
+      throw new Error(
+        `La solicitud excedió el tiempo de espera (${TIMEOUT_MS} ms)`,
+      );
     }
     throw error;
   } finally {
