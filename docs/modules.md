@@ -17,6 +17,7 @@ Este documento resume el estado actual de los módulos principales de la app (In
 
 - **Objetos/Estado**: lista `messages`, input de texto, estados de voz (escucha/habla), placeholders de TTS/STT.
 - **Existente**: simulación de respuesta IA, UI de conversación, controles básicos.
+- **Modo mock local**: cuando no hay `VITE_API_URL`, el Chat genera la respuesta de forma local con latencia configurable y opción de error simulado (controles: `Latencia (ms)` y `Simular error`). En este modo, el toggle de streaming (SSE) aparece deshabilitado porque requiere backend.
 - **Faltantes**:
   - Integración real con backend LLM/adapter (`POST /chat`).
   - Historial persistente por conversación, títulos automáticos.
@@ -24,7 +25,7 @@ Este documento resume el estado actual de los módulos principales de la app (In
   - Comandos/acciones (crear nota, guardar en memoria).
 - **Plan**:
   - Fase 1: `POST /chat` (texto->texto) + persistencia local por `conversationId`.
-  - Fase 2: streaming SSE/WebSocket; adjuntos; comandos con router de herramientas.
+  - Fase 2: streaming SSE/WebSocket; adjuntos; comandos con router de herramientas. El streaming solo está disponible cuando hay backend configurado (`VITE_API_URL`).
 
 ## Navegador (`BrowserModule`)
 
@@ -75,7 +76,7 @@ Este documento resume el estado actual de los módulos principales de la app (In
 
 ---
 
-# Plan de Desarrollo por Fases
+## Plan de Desarrollo por Fases
 
 - **Fase A: Autenticación (en curso)**
   - `/auth/login` (JWT), `/auth/me` (opcional), roles (admin/user).
@@ -98,7 +99,7 @@ Este documento resume el estado actual de los módulos principales de la app (In
 
 ---
 
-# Criterios de Aceptación (por módulo)
+## Criterios de Aceptación (por módulo)
 
 - **Autenticación**: login válido devuelve token y usuario; rutas protegidas redirigen; logout limpia `miia_auth`/`miia_token`.
 - **Chat**: enviar mensaje y recibir respuesta desde backend; historial visible; error UI si backend falla.
