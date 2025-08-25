@@ -28,6 +28,7 @@ const ChatModule: React.FC = () => {
   const [useStream, setUseStream] = useState(false);
   const [simulateLatencyMs, setSimulateLatencyMs] = useState<number>(400);
   const [simulateError, setSimulateError] = useState(false);
+  const [provider, setProvider] = useState<"auto" | "ollama" | "mock">("auto");
   const backendAvailable = Boolean(API_BASE);
 
   const scrollToBottom = () => {
@@ -69,7 +70,7 @@ const ChatModule: React.FC = () => {
           })),
           { role: "user", content: userMessage.text },
         ],
-        provider: "mock" as const,
+        provider,
         options: {
           simulateLatencyMs,
           simulateError,
@@ -245,12 +246,28 @@ const ChatModule: React.FC = () => {
               type="checkbox"
               checked={useStream}
               onChange={(e) => setUseStream(e.target.checked)}
-              disabled={!backendAvailable}
+              disabled={!backendAvailable || provider === "mock"}
             />
             <span>
               Usar streaming (SSE)
               {!backendAvailable && " (requiere backend)"}
             </span>
+          </label>
+          {/* Selector de proveedor */}
+          <label className="flex items-center space-x-2 text-blue-200">
+            <span>Proveedor:</span>
+            <select
+              value={provider}
+              onChange={(e) =>
+                setProvider(e.target.value as "auto" | "ollama" | "mock")
+              }
+              className="px-2 py-1 rounded bg-slate-800/50 border border-blue-500/30 text-blue-100"
+              disabled={!backendAvailable}
+            >
+              <option value="auto">Auto (router)</option>
+              <option value="ollama">Ollama</option>
+              <option value="mock">Mock (local)</option>
+            </select>
           </label>
           <label className="flex items-center space-x-2 text-blue-200">
             <span>Latencia (ms):</span>
