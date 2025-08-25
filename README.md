@@ -54,8 +54,9 @@ MiiA_Web/
 ## Entorno
 
 - Variables: ver `docs/environment.md`.
-- Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL`.
+- Ejemplo: copiar `.env.example` a `.env.local` y ajustar `VITE_API_URL` y `VITE_APP_VERSION` (opcional).
 - Si `VITE_API_URL` está definida, al iniciar se valida la sesión con `GET /auth/me` usando el `miia_token`. Si falla, se limpia la sesión y no se usa mock. Sin backend, se usa el login/mock (admin/miia2025) y se restaura `miia_auth` local.
+- `VITE_APP_VERSION` controla el texto de versión mostrado en la barra lateral (fallback por defecto: `v1.0.0`).
 
 ## Backend (server)
 
@@ -107,8 +108,9 @@ Respuesta ejemplo:
 
 ### Integración con el frontend (Chat)
 
-- Configurar en la raíz del proyecto: `./.env.local` con `VITE_API_URL=http://localhost:4000`.
-- El componente `src/components/Modules/ChatModule.tsx` envía el historial y el mensaje del usuario a `POST /chat` y muestra la respuesta.
+- Si quieres usar el backend real, configura en la raíz del proyecto: `./.env.local` con `VITE_API_URL=http://localhost:4000`.
+- El componente `src/components/Modules/ChatModule.tsx` envía el historial y el mensaje del usuario a `POST /chat` y muestra la respuesta. También soporta `POST /chat/stream` (SSE) cuando está activo el toggle "Usar streaming".
+- Cuando no hay backend (`VITE_API_URL` vacío/no definido), el Chat funciona en modo mock local: genera una respuesta simulada con latencia y, si se desea, error simulado. En este modo, el toggle de streaming aparece deshabilitado ya que requiere backend.
 
 ## Autenticación
 
