@@ -27,6 +27,6 @@ export function chooseModelByHeuristic(text: string): ModelChoice {
       reason: "manipulación/explicación de datos",
     };
   }
-  // General/español
-  return { model: "llama3.1:8b-instruct", reason: "consulta general" };
+  // General/español (usar un modelo disponible en el sistema)
+  return { model: "qwen2.5:14b-instruct", reason: "consulta general" };
 }
