@@ -28,6 +28,7 @@ const ChatModule: React.FC = () => {
   const [useStream, setUseStream] = useState(false);
   const [simulateLatencyMs, setSimulateLatencyMs] = useState<number>(400);
   const [simulateError, setSimulateError] = useState(false);
+  const backendAvailable = Boolean(API_BASE);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,7 +77,33 @@ const ChatModule: React.FC = () => {
         },
       };
 
-      if (useStream) {
+      // Función local de simulación cuando no hay backend disponible
+      const simulateLocal = async () => {
+        // Simular latencia
+        await new Promise((res) =>
+          setTimeout(res, Math.max(0, simulateLatencyMs)),
+        );
+        if (simulateError) {
+          throw new Error("Simulación de error local activada");
+        }
+        // Respuesta juguetona similar a provider mock: invertir/suavizar texto
+        const input = userMessage.text.trim();
+        const transformed = input
+          ? `Te escucho. Dijiste: "${input}". Aquí va una reflexión rápida: ${input
+              .split("")
+              .reverse()
+              .join("")}`
+          : "Hmm... no recibí contenido para procesar.";
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: transformed,
+          sender: "ai",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      };
+
+      if (useStream && backendAvailable) {
         // Streaming mediante fetch + lectura de SSE (POST /chat/stream)
         const resp = await fetch(`${API_BASE}/chat/stream`, {
           method: "POST",
@@ -141,7 +168,7 @@ const ChatModule: React.FC = () => {
             }
           }
         }
-      } else {
+      } else if (backendAvailable) {
         const res = await api.post<{
           message: { role: string; content: string };
         }>("/chat", payload, { auth: false });
@@ -153,6 +180,8 @@ const ChatModule: React.FC = () => {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiResponse]);
+      } else {
+        await simulateLocal();
       }
     } catch (error: unknown) {
       const msg =
@@ -216,8 +245,12 @@ const ChatModule: React.FC = () => {
               type="checkbox"
               checked={useStream}
               onChange={(e) => setUseStream(e.target.checked)}
+              disabled={!backendAvailable}
             />
-            <span>Usar streaming (SSE)</span>
+            <span>
+              Usar streaming (SSE)
+              {!backendAvailable && " (requiere backend)"}
+            </span>
           </label>
           <label className="flex items-center space-x-2 text-blue-200">
             <span>Latencia (ms):</span>
