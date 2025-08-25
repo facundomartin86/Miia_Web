@@ -25,7 +25,7 @@ const ChatModule: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Controles de simulación/streaming
-  const [useStream, setUseStream] = useState(false);
+  const [useStream, setUseStream] = useState(true);
   const [simulateLatencyMs, setSimulateLatencyMs] = useState<number>(400);
   const [simulateError, setSimulateError] = useState(false);
   const [provider, setProvider] = useState<"auto" | "ollama" | "mock">("auto");
