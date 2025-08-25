@@ -81,19 +81,22 @@ npm run dev      # desarrollo (nodemon + ts-node)
 ```env
 PORT=4000
 CORS_ORIGIN=http://localhost:5173
+# Inferencia local Ollama (sin tokens)
+OLLAMA_HOST=http://localhost:11434
 ```
 
 ### Endpoints mínimos
 
 - `GET /health` → `{ status: "ok", version: "0.1.0" }`
-- `POST /chat` → proveedor mock por defecto
+- `POST /chat` → proveedor configurable: `mock` | `ollama` | `auto`
+- `POST /chat/stream` → SSE (streaming) cuando el proveedor lo soporta (Ollama)
 
 Payload ejemplo (`POST /chat`):
 
 ```json
 {
   "messages": [{ "role": "user", "content": "Hola MiiA, ¿qué puedes hacer?" }],
-  "provider": "mock"
+  "provider": "auto"
 }
 ```
 
@@ -110,7 +113,23 @@ Respuesta ejemplo:
 
 - Si quieres usar el backend real, configura en la raíz del proyecto: `./.env.local` con `VITE_API_URL=http://localhost:4000`.
 - El componente `src/components/Modules/ChatModule.tsx` envía el historial y el mensaje del usuario a `POST /chat` y muestra la respuesta. También soporta `POST /chat/stream` (SSE) cuando está activo el toggle "Usar streaming".
+- Selector de proveedor: `Auto (router)` | `Ollama` | `Mock`. En `Auto`, el backend elige un modelo en función del texto (heurística simple).
 - Cuando no hay backend (`VITE_API_URL` vacío/no definido), el Chat funciona en modo mock local: genera una respuesta simulada con latencia y, si se desea, error simulado. En este modo, el toggle de streaming aparece deshabilitado ya que requiere backend.
+
+### Ollama (local, sin tokens)
+
+1. Instalar Ollama: <https://ollama.com>
+1. Ejecutar Ollama (por defecto en `http://localhost:11434`).
+1. Descargar modelos sugeridos:
+
+```bash
+ollama pull llama3.1:8b
+ollama pull qwen2.5-coder:7b
+ollama pull deepseek-r1:7b
+```
+
+1. Verifica `server/.env` → `OLLAMA_HOST=http://localhost:11434`.
+1. Ejecutar backend: `npm run dev` en `server/`.
 
 ## Autenticación
 

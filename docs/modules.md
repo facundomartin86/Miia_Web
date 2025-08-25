@@ -18,14 +18,18 @@ Este documento resume el estado actual de los módulos principales de la app (In
 - **Objetos/Estado**: lista `messages`, input de texto, estados de voz (escucha/habla), placeholders de TTS/STT.
 - **Existente**: simulación de respuesta IA, UI de conversación, controles básicos.
 - **Modo mock local**: cuando no hay `VITE_API_URL`, el Chat genera la respuesta de forma local con latencia configurable y opción de error simulado (controles: `Latencia (ms)` y `Simular error`). En este modo, el toggle de streaming (SSE) aparece deshabilitado porque requiere backend.
+- **Proveedores soportados**:
+  - `mock`: respuesta simulada (sin streaming real).
+  - `ollama`: inferencia local vía Ollama (sin tokens). Requiere `server/.env` con `OLLAMA_HOST` y tener modelos descargados.
+  - `auto`: ruteo automático en backend según heurística del texto del usuario (elige modelo de Ollama).
+- **Streaming**: disponible cuando el proveedor es `ollama` y el toggle "Usar streaming (SSE)" está activo. Endpoint: `POST /chat/stream`.
 - **Faltantes**:
-  - Integración real con backend LLM/adapter (`POST /chat`).
   - Historial persistente por conversación, títulos automáticos.
   - Adjuntos (archivos/imágenes) y streaming de tokens.
   - Comandos/acciones (crear nota, guardar en memoria).
 - **Plan**:
-  - Fase 1: `POST /chat` (texto->texto) + persistencia local por `conversationId`.
-  - Fase 2: streaming SSE/WebSocket; adjuntos; comandos con router de herramientas. El streaming solo está disponible cuando hay backend configurado (`VITE_API_URL`).
+  - Fase 1: `POST /chat` (texto->texto) + persistencia local por `conversationId` (completado con proveedores `mock`/`ollama`/`auto`).
+  - Fase 2: mejorar ruteo automático (clasificador ligero), adjuntos; comandos con router de herramientas. El streaming solo está disponible cuando hay backend configurado (`VITE_API_URL`) y proveedor `ollama`.
 
 ## Navegador (`BrowserModule`)
 
