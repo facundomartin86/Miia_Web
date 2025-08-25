@@ -17,7 +17,7 @@ export interface ChatOptions {
 export interface ChatRequest {
   conversationId?: string;
   messages: Message[];
-  provider?: "mock"; // ampliable a "ollama" | "openai" | "hf"
+  provider?: "mock" | "ollama" | "auto"; // ampliable a otros: "openai" | "hf"
   options?: ChatOptions;
 }
 
