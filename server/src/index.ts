@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { router as chatRouter } from "./routes/chat";
+import { authRouter } from "./routes/auth";
 import { errorHandler } from "./middleware/error";
 import { getConfig } from "./utils/config";
 
@@ -17,6 +18,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/chat", chatRouter);
+app.use("/auth", authRouter);
 
 app.use(errorHandler);
 
