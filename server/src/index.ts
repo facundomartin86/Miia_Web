@@ -26,7 +26,7 @@ app.use(errorHandler);
 
 // Ejecutar servidor solo cuando se ejecuta directamente, no en tests
 if (typeof require !== "undefined" && require.main === module) {
-  const host = "127.0.0.1"; // evitar issues con IPv6/localhost en Windows
+  const host = "0.0.0.0"; // escuchar en todas las interfaces
   const server = app.listen(config.port, host, () => {
     const addr = server.address();
     if (typeof addr === "object" && addr) {

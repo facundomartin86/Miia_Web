@@ -29,6 +29,7 @@ const ChatModule: React.FC = () => {
   const [simulateLatencyMs, setSimulateLatencyMs] = useState<number>(400);
   const [simulateError, setSimulateError] = useState(false);
   const [provider, setProvider] = useState<"auto" | "ollama" | "mock">("auto");
+  const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
   const backendAvailable = Boolean(API_BASE);
   // Mostrar/ocultar configuración avanzada
   const [showSettings, setShowSettings] = useState(false);
@@ -307,6 +308,24 @@ const ChatModule: React.FC = () => {
               />
               <span>Simular error</span>
             </label>
+
+            {/* Selector de tamaño de fuente */}
+            <div className="space-y-1">
+              <label className="flex items-center justify-between text-blue-200 text-sm">
+                Tamaño de fuente
+                <select
+                  value={fontSize}
+                  onChange={(e) =>
+                    setFontSize(e.target.value as "sm" | "base" | "lg")
+                  }
+                  className="ml-2 bg-slate-800/50 border border-blue-500/30 text-blue-100 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="sm">Pequeño</option>
+                  <option value="base">Mediano</option>
+                  <option value="lg">Grande</option>
+                </select>
+              </label>
+            </div>
           </div>
         )}
       </div>
@@ -329,8 +348,16 @@ const ChatModule: React.FC = () => {
                 <p
                   className={`leading-relaxed ${
                     message.sender === "user"
-                      ? "text-[15px] md:text-base"
-                      : "text-sm md:text-[15px]"
+                      ? fontSize === "sm"
+                        ? "text-[13px] md:text-sm"
+                        : fontSize === "base"
+                          ? "text-[15px] md:text-base"
+                          : "text-[17px] md:text-lg"
+                      : fontSize === "sm"
+                        ? "text-xs md:text-sm"
+                        : fontSize === "base"
+                          ? "text-sm md:text-[15px]"
+                          : "text-base md:text-lg"
                   }`}
                 >
                   {message.text}

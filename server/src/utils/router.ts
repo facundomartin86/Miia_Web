@@ -1,10 +1,12 @@
 // Router simple por heurísticas para elegir modelo de Ollama según el tema
+import { getConfig } from "./config";
 export type ModelChoice = {
   model: string;
   reason: string;
 };
 
 export function chooseModelByHeuristic(text: string): ModelChoice {
+  const { routerGeneralModel } = getConfig();
   const t = text.toLowerCase();
   // Código / programación
   if (
@@ -27,6 +29,6 @@ export function chooseModelByHeuristic(text: string): ModelChoice {
       reason: "manipulación/explicación de datos",
     };
   }
-  // General/español (usar un modelo disponible en el sistema)
-  return { model: "qwen2.5:14b-instruct", reason: "consulta general" };
+  // General/español configurable por ENV (ROUTER_GENERAL_MODEL)
+  return { model: routerGeneralModel, reason: "consulta general" };
 }

@@ -1,4 +1,4 @@
-import type { ChatRequest, ChatResponse, Message, Role } from "../types/chat";
+import type { ChatRequest, ChatResponse, Message } from "../types/chat";
 import { getConfig } from "../utils/config";
 
 // Formato esperado por la API de Ollama
@@ -6,6 +6,14 @@ interface OllamaChatRequest {
   model: string;
   messages: { role: string; content: string }[];
   stream?: boolean;
+  // Opciones de sampling
+  options?: {
+    num_predict?: number;
+    temperature?: number;
+    top_p?: number;
+  };
+  // Mantener modelo caliente
+  keep_alive?: string;
 }
 
 interface OllamaChatResponseChunk {
@@ -21,54 +29,91 @@ export const ollamaProvider = {
   async generate(req: ChatRequest, model: string): Promise<ChatResponse> {
     const cfg = getConfig();
     const url = `${cfg.ollamaHost}/api/chat`;
-    const bodyBase = {
-      messages: mapMessages(req.messages),
-    } as const;
 
-    async function attempt(withModel: string) {
-      const body: OllamaChatRequest = {
-        model: withModel,
-        messages: bodyBase.messages,
-        stream: false,
-      };
-      return fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    }
-
-    let resp = await attempt(model);
-    if (
-      !resp.ok &&
-      cfg.ollamaFallbackModel &&
-      cfg.ollamaFallbackModel !== model
-    ) {
-      // Reintentar con fallback
-      resp = await attempt(cfg.ollamaFallbackModel);
-      model = cfg.ollamaFallbackModel;
-    }
-    if (!resp.ok) {
-      let extra = "";
-      try {
-        extra = await resp.text();
-      } catch {
-        // ignore
+    // Verificar que el host de Ollama esté accesible
+    try {
+      const healthCheck = await fetch(`${cfg.ollamaHost}/api/tags`);
+      if (!healthCheck.ok) {
+        throw new Error(`No se pudo conectar con Ollama en ${cfg.ollamaHost}`);
       }
+    } catch (error) {
+      console.error("Error de conexión con Ollama:", error);
       throw new Error(
-        `Ollama error: ${resp.status} ${resp.statusText}${extra ? ` - ${extra}` : ""}`,
+        `Servicio de Ollama no disponible en ${cfg.ollamaHost}. Asegúrate de que Ollama esté en ejecución.`,
       );
     }
-    const data = (await resp.json()) as {
-      message: { role: Role | string; content: string };
-    };
-    return {
-      message: {
-        role: (data.message.role as Role) || "assistant",
-        content: data.message.content,
-      },
-      usage: { provider: "ollama", model },
-    } satisfies ChatResponse;
+
+    const baseMessages = mapMessages(req.messages);
+
+    async function attempt(withModel: string): Promise<ChatResponse> {
+      try {
+        const body: OllamaChatRequest = {
+          model: withModel,
+          messages: baseMessages,
+          stream: false,
+          options: {
+            num_predict: cfg.ollamaOptions.numPredict,
+            temperature: cfg.ollamaOptions.temperature,
+            top_p: cfg.ollamaOptions.topP,
+          },
+          keep_alive: cfg.ollamaOptions.keepAlive,
+        };
+
+        console.log(`Enviando solicitud a Ollama con modelo: ${withModel}`);
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Error de Ollama (${response.status}):`, errorText);
+          throw new Error(
+            `Error del servidor Ollama: ${response.status} - ${errorText}`,
+          );
+        }
+
+        const data = await response.json();
+
+        // Asegurarse de que la respuesta tenga el formato correcto
+        if (!data.message || !data.message.content) {
+          throw new Error("Respuesta de Ollama en formato inesperado");
+        }
+
+        return {
+          message: {
+            role: "assistant",
+            content: data.message.content,
+          },
+          usage: {
+            ...(data.usage || {}),
+            provider: "ollama",
+            model: withModel,
+          },
+        };
+      } catch (error: unknown) {
+        console.error("Error en la solicitud a Ollama:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Error desconocido";
+        throw new Error(
+          `No se pudo completar la solicitud a Ollama: ${errorMessage}`,
+        );
+      }
+    }
+
+    try {
+      return await attempt(model);
+    } catch (error) {
+      // Si hay error y hay un modelo de respaldo diferente, intentar con él
+      if (cfg.ollamaFallbackModel && cfg.ollamaFallbackModel !== model) {
+        console.log(
+          `Intentando con modelo de respaldo: ${cfg.ollamaFallbackModel}`,
+        );
+        return await attempt(cfg.ollamaFallbackModel);
+      }
+      throw error; // Relanzar el error si no hay respaldo o si ya lo intentamos
+    }
   },
 
   async stream(
@@ -85,6 +130,12 @@ export const ollamaProvider = {
         model: withModel,
         messages: base.messages,
         stream: true,
+        options: {
+          num_predict: cfg.ollamaOptions.numPredict,
+          temperature: cfg.ollamaOptions.temperature,
+          top_p: cfg.ollamaOptions.topP,
+        },
+        keep_alive: cfg.ollamaOptions.keepAlive,
       };
       const r = await fetch(url, {
         method: "POST",
