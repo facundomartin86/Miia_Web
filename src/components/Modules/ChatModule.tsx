@@ -1,6 +1,62 @@
-import React, { useState, useRef, useEffect } from "react";
-import { api, API_BASE } from "../../services/api";
-import { Send, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, Send, Volume2, VolumeX } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { API_BASE, api } from "../../services/api";
+
+// Tipos para APIs de voz del navegador
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onresult:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void)
+    | null;
+  onerror:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void)
+    | null;
+  onend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+declare global {
+  var SpeechRecognition: {
+    prototype: SpeechRecognition;
+    new (): SpeechRecognition;
+  };
+}
 
 interface Message {
   id: string;
@@ -8,6 +64,61 @@ interface Message {
   sender: "user" | "ai";
   timestamp: Date;
 }
+
+// Función para procesar markdown básico
+const processMarkdown = (text: string): JSX.Element => {
+  const lines = text.split("\n");
+  const elements: JSX.Element[] = [];
+
+  lines.forEach((line, index) => {
+    if (line.trim() === "") {
+      elements.push(<br key={`br-${index}`} />);
+      return;
+    }
+
+    // Procesar texto con formato
+    let processedLine = line;
+
+    // Reemplazar **texto** con <strong>texto</strong>
+    processedLine = processedLine.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>",
+    );
+
+    // Reemplazar *texto* con <em>texto</em>
+    processedLine = processedLine.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+    // Detectar listas numeradas
+    const numberedListMatch = line.match(/^(\d+)\.\s+(.+)/);
+    if (numberedListMatch) {
+      elements.push(
+        <div key={`line-${index}`} className="mb-1">
+          <span className="font-semibold text-cyan-300">
+            {numberedListMatch[1]}.
+          </span>{" "}
+          <span
+            dangerouslySetInnerHTML={{
+              __html: numberedListMatch[2].replace(
+                /\*\*(.*?)\*\*/g,
+                "<strong>$1</strong>",
+              ),
+            }}
+          />
+        </div>,
+      );
+      return;
+    }
+
+    // Línea normal
+    elements.push(
+      <div key={`line-${index}`} className="mb-1">
+        <span dangerouslySetInnerHTML={{ __html: processedLine }} />
+      </div>,
+    );
+  });
+
+  return <div>{elements}</div>;
+};
 
 const ChatModule: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -205,16 +316,102 @@ const ChatModule: React.FC = () => {
   };
 
   const handleVoiceInput = () => {
-    setIsListening(!isListening);
-    // Aquí se implementaría el reconocimiento de voz
+    if (
+      !("webkitSpeechRecognition" in window) &&
+      !("SpeechRecognition" in window)
+    ) {
+      alert(
+        "Tu navegador no soporta reconocimiento de voz. Prueba con Chrome o Edge.",
+      );
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "es-ES";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const { results } = event;
+      const { transcript } = results[0][0];
+      setInputText(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Error en reconocimiento de voz:", event.error);
+      setIsListening(false);
+      if (event.error === "not-allowed") {
+        alert(
+          "Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.",
+        );
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   const handleTextToSpeech = (text: string) => {
-    setIsSpeaking(true);
-    // Aquí se implementaría la síntesis de voz
-    // Usar la longitud del texto para simular la duración del habla (50ms por carácter, máx 5s)
-    const duration = Math.min(5000, Math.max(1000, text.length * 50));
-    setTimeout(() => setIsSpeaking(false), duration);
+    if (!("speechSynthesis" in window)) {
+      alert("Tu navegador no soporta síntesis de voz.");
+      return;
+    }
+
+    // Si ya está hablando, detener
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-ES";
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 0.8;
+
+    // Buscar una voz en español
+    const voices = window.speechSynthesis.getVoices();
+    const spanishVoice = voices.find(
+      (voice) =>
+        voice.lang.startsWith("es") ||
+        voice.name.toLowerCase().includes("spanish"),
+    );
+    if (spanishVoice) {
+      utterance.voice = spanishVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    utterance.onerror = (event) => {
+      console.error("Error en síntesis de voz:", event.error);
+      setIsSpeaking(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -345,8 +542,8 @@ const ChatModule: React.FC = () => {
                     : "chat-bubble-ai text-white"
                 }`}
               >
-                <p
-                  className={`leading-relaxed ${
+                <div
+                  className={`leading-relaxed whitespace-pre-wrap ${
                     message.sender === "user"
                       ? fontSize === "sm"
                         ? "text-[13px] md:text-sm"
@@ -360,8 +557,10 @@ const ChatModule: React.FC = () => {
                           : "text-base md:text-lg"
                   }`}
                 >
-                  {message.text}
-                </p>
+                  {message.sender === "ai"
+                    ? processMarkdown(message.text)
+                    : message.text}
+                </div>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-[11px] md:text-xs opacity-70">
                     {message.timestamp.toLocaleTimeString()}
