@@ -40,7 +40,7 @@ const Dashboard: React.FC = () => {
       />
 
       <main
-        className={`flex-1 transition-all duration-300 ${
+        className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ${
           sidebarCollapsed ? "ml-16" : "ml-64"
         }`}
       >
@@ -76,7 +76,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-hidden p-3 md:p-4">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/chat" element={<ChatModule />} />

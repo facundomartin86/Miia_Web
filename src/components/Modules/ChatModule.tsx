@@ -30,6 +30,8 @@ const ChatModule: React.FC = () => {
   const [simulateError, setSimulateError] = useState(false);
   const [provider, setProvider] = useState<"auto" | "ollama" | "mock">("auto");
   const backendAvailable = Boolean(API_BASE);
+  // Mostrar/ocultar configuración avanzada
+  const [showSettings, setShowSettings] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -222,82 +224,95 @@ const ChatModule: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="glass-morphism rounded-t-xl p-4 border-b border-blue-500/20">
+      <div className="glass-morphism rounded-t-xl p-1 border-b border-blue-500/20 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Chat con MiiA</h1>
-            <p className="text-blue-200">
+            <h1 className="text-base md:text-lg font-bold text-white">
+              Chat con MiiA
+            </h1>
+            <p className="text-blue-200 text-[11px] md:text-xs">
               Conversación inteligente • Texto y Voz
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1 bg-green-500/20 px-3 py-1 rounded-full">
+            <div className="flex items-center space-x-1 bg-green-500/20 px-2 py-0.5 rounded-full">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-green-300 text-sm">En línea</span>
+              <span className="text-green-300 text-xs">En línea</span>
             </div>
+            <button
+              onClick={() => setShowSettings((s) => !s)}
+              className="px-2 py-0.5 rounded-full border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-colors text-xs"
+              title={
+                showSettings ? "Ocultar configuración" : "Mostrar configuración"
+              }
+            >
+              {showSettings ? "Ocultar config" : "Config"}
+            </button>
           </div>
         </div>
-        {/* Controles de simulación */}
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-          <label className="flex items-center space-x-2 text-blue-200">
-            <input
-              type="checkbox"
-              checked={useStream}
-              onChange={(e) => setUseStream(e.target.checked)}
-              disabled={!backendAvailable || provider === "mock"}
-            />
-            <span>
-              Usar streaming (SSE)
-              {!backendAvailable && " (requiere backend)"}
-            </span>
-          </label>
-          {/* Selector de proveedor */}
-          <label className="flex items-center space-x-2 text-blue-200">
-            <span>Proveedor:</span>
-            <select
-              value={provider}
-              onChange={(e) =>
-                setProvider(e.target.value as "auto" | "ollama" | "mock")
-              }
-              className="px-2 py-1 rounded bg-slate-800/50 border border-blue-500/30 text-blue-100"
-              disabled={!backendAvailable}
-            >
-              <option value="auto">Auto (router)</option>
-              <option value="ollama">Ollama</option>
-              <option value="mock">Mock (local)</option>
-            </select>
-          </label>
-          <label className="flex items-center space-x-2 text-blue-200">
-            <span>Latencia (ms):</span>
-            <input
-              type="number"
-              min={0}
-              max={30000}
-              value={simulateLatencyMs}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (!Number.isNaN(v)) {
-                  setSimulateLatencyMs(Math.min(30000, Math.max(0, v)));
+        {/* Controles de simulación (colapsables) */}
+        {showSettings && (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <label className="flex items-center space-x-2 text-blue-200">
+              <input
+                type="checkbox"
+                checked={useStream}
+                onChange={(e) => setUseStream(e.target.checked)}
+                disabled={!backendAvailable || provider === "mock"}
+              />
+              <span>
+                Usar streaming (SSE)
+                {!backendAvailable && " (requiere backend)"}
+              </span>
+            </label>
+            {/* Selector de proveedor */}
+            <label className="flex items-center space-x-2 text-blue-200">
+              <span>Proveedor:</span>
+              <select
+                value={provider}
+                onChange={(e) =>
+                  setProvider(e.target.value as "auto" | "ollama" | "mock")
                 }
-              }}
-              className="w-24 px-2 py-1 rounded bg-slate-800/50 border border-blue-500/30 text-blue-100"
-            />
-          </label>
-          <label className="flex items-center space-x-2 text-blue-200">
-            <input
-              type="checkbox"
-              checked={simulateError}
-              onChange={(e) => setSimulateError(e.target.checked)}
-            />
-            <span>Simular error</span>
-          </label>
-        </div>
+                className="px-2 py-1 rounded bg-slate-800/50 border border-blue-500/30 text-blue-100"
+                disabled={!backendAvailable}
+              >
+                <option value="auto">Auto (router)</option>
+                <option value="ollama">Ollama</option>
+                <option value="mock">Mock (local)</option>
+              </select>
+            </label>
+            <label className="flex items-center space-x-2 text-blue-200">
+              <span>Latencia (ms):</span>
+              <input
+                type="number"
+                min={0}
+                max={30000}
+                value={simulateLatencyMs}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (!Number.isNaN(v)) {
+                    setSimulateLatencyMs(Math.min(30000, Math.max(0, v)));
+                  }
+                }}
+                className="w-24 px-2 py-1 rounded bg-slate-800/50 border border-blue-500/30 text-blue-100"
+              />
+            </label>
+            <label className="flex items-center space-x-2 text-blue-200">
+              <input
+                type="checkbox"
+                checked={simulateError}
+                onChange={(e) => setSimulateError(e.target.checked)}
+              />
+              <span>Simular error</span>
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 glass-morphism p-4 overflow-y-auto">
+      <div className="flex-1 glass-morphism p-3 overflow-y-auto overscroll-contain custom-scroll">
         <div className="space-y-4">
           {messages.map((message) => (
             <div
@@ -305,21 +320,29 @@ const ChatModule: React.FC = () => {
               className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-2xl ${
+                className={`max-w-[90%] p-3 rounded-2xl ${
                   message.sender === "user"
                     ? "chat-bubble-user text-white"
                     : "chat-bubble-ai text-white"
                 }`}
               >
-                <p className="leading-relaxed">{message.text}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs opacity-70">
+                <p
+                  className={`leading-relaxed ${
+                    message.sender === "user"
+                      ? "text-[15px] md:text-base"
+                      : "text-sm md:text-[15px]"
+                  }`}
+                >
+                  {message.text}
+                </p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[11px] md:text-xs opacity-70">
                     {message.timestamp.toLocaleTimeString()}
                   </span>
                   {message.sender === "ai" && (
                     <button
                       onClick={() => handleTextToSpeech(message.text)}
-                      className="text-cyan-300 hover:text-cyan-200 transition-colors"
+                      className="text-cyan-300 hover:text-cyan-200 transition-colors text-xs md:text-sm"
                     >
                       {isSpeaking ? (
                         <VolumeX className="w-4 h-4" />
@@ -355,7 +378,7 @@ const ChatModule: React.FC = () => {
       </div>
 
       {/* Input */}
-      <div className="glass-morphism rounded-b-xl p-4">
+      <div className="glass-morphism rounded-b-xl p-2">
         <div className="flex items-end space-x-3">
           <div className="flex-1">
             <textarea
@@ -363,31 +386,31 @@ const ChatModule: React.FC = () => {
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu mensaje aquí... (Enter para enviar)"
-              className="w-full p-3 bg-slate-800/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-              rows={2}
+              className="w-full p-2 bg-slate-800/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-base md:text-lg"
+              rows={1}
             />
           </div>
           <div className="flex flex-col space-y-2">
             <button
               onClick={handleVoiceInput}
-              className={`p-3 rounded-lg transition-all ${
+              className={`p-2.5 rounded-lg transition-all text-xs md:text-sm ${
                 isListening
                   ? "bg-red-500 hover:bg-red-600 text-white"
                   : "bg-slate-700 hover:bg-slate-600 text-blue-300"
               }`}
             >
               {isListening ? (
-                <MicOff className="w-5 h-5" />
+                <MicOff className="w-4 h-4" />
               ) : (
-                <Mic className="w-5 h-5" />
+                <Mic className="w-4 h-4" />
               )}
             </button>
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim()}
-              className="p-3 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2.5 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </button>
           </div>
         </div>
