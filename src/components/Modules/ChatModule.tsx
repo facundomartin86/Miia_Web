@@ -147,6 +147,7 @@ const ChatModule: React.FC = () => {
   const [inputText, setInputText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [autoTTS, setAutoTTS] = useState(false); // Nueva configuración para TTS automático
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -168,14 +169,15 @@ const ChatModule: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim()) {
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || inputText.trim();
+    if (!textToSend) {
       return;
     }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputText,
+      text: textToSend,
       sender: "user",
       timestamp: new Date(),
     };
@@ -189,15 +191,9 @@ const ChatModule: React.FC = () => {
       const payload = {
         messages: [
           {
-            role: "system",
-            content: "Eres MiiA, una IA personal de asistencia.",
+            role: "user",
+            content: textToSend,
           },
-          // mapear historial relevante (opcional: enviar solo últimos N)
-          ...messages.slice(-5).map((m) => ({
-            role: m.sender === "user" ? "user" : "assistant",
-            content: m.text,
-          })),
-          { role: "user", content: userMessage.text },
         ],
         provider,
         options: {
@@ -217,20 +213,27 @@ const ChatModule: React.FC = () => {
           throw new Error("Simulación de error local activada");
         }
         // Respuesta juguetona similar a provider mock: invertir/suavizar texto
-        const input = userMessage.text.trim();
+        const input = textToSend.trim();
         const transformed = input
           ? `Te escucho. Dijiste: "${input}". Aquí va una reflexión rápida: ${input
               .split("")
               .reverse()
               .join("")}`
           : "Hmm... no recibí contenido para procesar.";
-        const aiResponse: Message = {
+        const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           text: transformed,
           sender: "ai",
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, aiResponse]);
+        setMessages((prev) => [...prev, aiMessage]);
+
+        // TTS automático si está habilitado
+        if (autoTTS && transformed.trim()) {
+          setTimeout(() => {
+            handleTextToSpeech(transformed);
+          }, 300); // Pequeño delay para mejor UX
+        }
       };
 
       if (useStream && backendAvailable) {
@@ -364,6 +367,13 @@ const ChatModule: React.FC = () => {
       const { transcript } = results[0][0];
       setInputText(transcript);
       setIsListening(false);
+
+      // Enviar automáticamente el mensaje cuando se deja de hablar
+      if (transcript.trim()) {
+        setTimeout(() => {
+          handleSendMessage(transcript.trim());
+        }, 500); // Pequeño delay para mejor UX
+      }
     };
 
     recognition.onerror = (event) => {
@@ -521,6 +531,16 @@ const ChatModule: React.FC = () => {
               <span>Simular error</span>
             </label>
 
+            {/* Toggle para TTS automático */}
+            <label className="flex items-center space-x-2 text-blue-200">
+              <input
+                type="checkbox"
+                checked={autoTTS}
+                onChange={(e) => setAutoTTS(e.target.checked)}
+              />
+              <span>Respuesta por voz automática</span>
+            </label>
+
             {/* Selector de tamaño de fuente */}
             <div className="space-y-1">
               <label className="flex items-center justify-between text-blue-200 text-sm">
@@ -647,7 +667,10 @@ const ChatModule: React.FC = () => {
               )}
             </button>
             <button
-              onClick={handleSendMessage}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
               disabled={!inputText.trim()}
               className="p-2.5 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
             >
