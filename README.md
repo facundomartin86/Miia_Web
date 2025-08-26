@@ -124,6 +124,47 @@ Respuesta ejemplo:
 - Selector de proveedor: `Auto (router)` | `Ollama` | `Mock`. En `Auto`, el backend elige un modelo en función del texto (heurística simple).
 - Cuando no hay backend (`VITE_API_URL` vacío/no definido), el Chat funciona en modo mock local: genera una respuesta simulada con latencia y, si se desea, error simulado. En este modo, el toggle de streaming aparece deshabilitado ya que requiere backend.
 
+## Chat de voz (STT/TTS y streaming)
+
+El módulo `ChatModule` soporta conversación por voz bidireccional usando Web Speech API (sin dependencias externas):
+
+- Reconocimiento de voz (STT): dictas tu mensaje con el micrófono y se envía automáticamente al dejar de hablar.
+- Síntesis de voz (TTS): MiiA puede leer en voz alta sus respuestas.
+- Streaming SSE: las respuestas se reciben en tiempo real; si el TTS automático está activado, se leen oraciones completas a medida que llegan.
+
+Ubicación: `src/components/Modules/ChatModule.tsx`.
+
+### Controles en la UI
+
+- Botón Micrófono: activa/desactiva escucha. Al finalizar la frase, se envía el texto automáticamente.
+- Botón Leer última respuesta: reproduce por voz el último mensaje de la IA.
+- Checkbox “Respuesta por voz automática”: activa/desactiva TTS automático. Este toggle está disponible en:
+  - Configuración superior (header del Chat)
+  - Footer (debajo de la caja de texto)
+    Ambos toggles están sincronizados y controlan el mismo estado.
+- Toggle “Usar streaming (SSE)”: habilita recepción por tokens (requiere backend).
+
+### Comportamiento
+
+- Con streaming + “Respuesta por voz automática” activado:
+  - Se detectan oraciones completas durante el streaming y se reproducen en tiempo real.
+  - Al finalizar, si queda texto sin puntuación, también se reproduce.
+- Sin streaming + “Respuesta por voz automática” activado:
+  - La última respuesta recibida se reproduce automáticamente.
+- En cualquier modo puedes usar “Leer última respuesta” para reproducir manualmente.
+
+### Requisitos y notas
+
+- Navegador con Web Speech API (Chrome/Edge recomendado).
+- Dar permiso de micrófono para usar STT.
+- Backend recomendado para streaming SSE (`/chat/stream`). Sin backend, el modo mock funciona sin streaming.
+
+### Solución de problemas
+
+- Si el TTS no suena: verifica que el sistema tenga voces instaladas y el navegador permita reproducción de audio.
+- Si el micrófono no funciona: revisa permisos del navegador y sistema operativo.
+- Revisa la consola del navegador para mensajes de error de STT/TTS.
+
 ### Ollama (local, sin tokens)
 
 1. Instalar Ollama: <https://ollama.com>
