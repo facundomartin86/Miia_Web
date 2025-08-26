@@ -150,6 +150,8 @@ const ChatModule: React.FC = () => {
   const [autoTTS, setAutoTTS] = useState(false); // Nueva configuración para TTS automático
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Ref para conocer el origen del último envío (voz o texto)
+  const sendOriginRef = useRef<"voice" | "typed">("typed");
 
   // Controles de simulación/streaming
   const [useStream, setUseStream] = useState(true);
@@ -227,12 +229,9 @@ const ChatModule: React.FC = () => {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiMessage]);
-
-        // TTS automático si está habilitado
+        // Auto leer última respuesta en modo no-streaming si TTS está activo
         if (autoTTS && transformed.trim()) {
-          setTimeout(() => {
-            handleTextToSpeech(transformed);
-          }, 300); // Pequeño delay para mejor UX
+          setTimeout(() => handleTextToSpeech(transformed), 250);
         }
       };
 
@@ -251,6 +250,13 @@ const ChatModule: React.FC = () => {
         const decoder = new TextDecoder();
         let accumulated = "";
         const aiId = (Date.now() + 1).toString();
+
+        // Variables para TTS en streaming
+        let fullResponseText = "";
+        let lastSpokenIndex = 0;
+        const speechQueue: string[] = [];
+        let isSpeakingStream = false;
+
         // Crear mensaje AI vacío que iremos completando
         setMessages((prev) => [
           ...prev,
@@ -258,11 +264,86 @@ const ChatModule: React.FC = () => {
         ]);
 
         const appendDelta = (delta: string) => {
+          fullResponseText += delta;
           setMessages((prev) =>
             prev.map((m) =>
               m.id === aiId ? { ...m, text: (m.text || "") + delta } : m,
             ),
           );
+
+          // TTS automático durante streaming - usar el estado actual
+          processStreamingTTS(delta);
+        };
+
+        const processStreamingTTS = (_newText: string) => {
+          // Solo procesar TTS si está habilitado
+          if (!autoTTS) {
+            return;
+          }
+
+          // Buscar oraciones completas para reproducir
+          const sentences = fullResponseText.match(/[^.!?]*[.!?]+/g) || [];
+
+          // Si tenemos nuevas oraciones completas que no hemos reproducido
+          if (sentences.length > lastSpokenIndex) {
+            for (let i = lastSpokenIndex; i < sentences.length; i++) {
+              const sentence = sentences[i].trim();
+              if (sentence && sentence.length > 10) {
+                // Solo oraciones con contenido
+                speechQueue.push(sentence);
+              }
+            }
+            lastSpokenIndex = sentences.length;
+
+            // Iniciar reproducción si no está en curso
+            if (!isSpeakingStream && speechQueue.length > 0) {
+              speakNextInQueue();
+            }
+          }
+        };
+
+        const speakNextInQueue = () => {
+          if (speechQueue.length === 0) {
+            isSpeakingStream = false;
+            return;
+          }
+
+          const textToSpeak = speechQueue.shift()!;
+          isSpeakingStream = true;
+
+          if ("speechSynthesis" in window) {
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = "es-ES";
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.volume = 0.8;
+
+            // Buscar voz en español
+            const voices = window.speechSynthesis.getVoices();
+            const spanishVoice = voices.find(
+              (voice) =>
+                voice.lang.startsWith("es") ||
+                voice.name.toLowerCase().includes("spanish"),
+            );
+            if (spanishVoice) {
+              utterance.voice = spanishVoice;
+            }
+
+            utterance.onend = () => {
+              // Continuar con la siguiente oración en la cola
+              setTimeout(() => speakNextInQueue(), 200);
+            };
+
+            utterance.onerror = () => {
+              // En caso de error, continuar con la siguiente
+              setTimeout(() => speakNextInQueue(), 200);
+            };
+
+            window.speechSynthesis.speak(utterance);
+          } else {
+            // Si no hay soporte TTS, continuar
+            setTimeout(() => speakNextInQueue(), 200);
+          }
         };
 
         for (;;) {
@@ -301,6 +382,25 @@ const ChatModule: React.FC = () => {
             }
           }
         }
+
+        // Al finalizar el streaming, reproducir cualquier texto restante
+        // Cierre de streaming: completar restos si autoTTS está activo
+        if (fullResponseText && autoTTS) {
+          const lastPunctuation = Math.max(
+            fullResponseText.lastIndexOf("."),
+            fullResponseText.lastIndexOf("!"),
+            fullResponseText.lastIndexOf("?"),
+          );
+          const remainingText = fullResponseText
+            .substring(lastPunctuation + 1)
+            .trim();
+          if (remainingText && remainingText.length > 5) {
+            speechQueue.push(remainingText);
+            if (!isSpeakingStream) {
+              speakNextInQueue();
+            }
+          }
+        }
       } else if (backendAvailable) {
         const res = await api.post<{
           message: { role: string; content: string };
@@ -313,6 +413,10 @@ const ChatModule: React.FC = () => {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiResponse]);
+        // No-streaming: leer automáticamente si TTS está activo
+        if (autoTTS && aiResponse.text.trim()) {
+          setTimeout(() => handleTextToSpeech(aiResponse.text), 250);
+        }
       } else {
         await simulateLocal();
       }
@@ -371,6 +475,8 @@ const ChatModule: React.FC = () => {
       // Enviar automáticamente el mensaje cuando se deja de hablar
       if (transcript.trim()) {
         setTimeout(() => {
+          // Marcar origen como voz y enviar
+          sendOriginRef.current = "voice";
           handleSendMessage(transcript.trim());
         }, 500); // Pequeño delay para mejor UX
       }
@@ -442,7 +548,17 @@ const ChatModule: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      // Marcar origen como texto y enviar
+      sendOriginRef.current = "typed";
       handleSendMessage();
+    }
+  };
+
+  // Leer manualmente el último mensaje de la IA
+  const handleSpeakLastAi = () => {
+    const lastAi = [...messages].reverse().find((m) => m.sender === "ai");
+    if (lastAi && lastAi.text.trim()) {
+      handleTextToSpeech(lastAi.text);
     }
   };
 
@@ -640,7 +756,8 @@ const ChatModule: React.FC = () => {
 
       {/* Input */}
       <div className="glass-morphism rounded-b-xl p-2">
-        <div className="flex items-end space-x-3">
+        {/* Caja de texto */}
+        <div className="flex">
           <div className="flex-1">
             <textarea
               value={inputText}
@@ -651,14 +768,19 @@ const ChatModule: React.FC = () => {
               rows={1}
             />
           </div>
-          <div className="flex flex-col space-y-2">
+        </div>
+        {/* Controles debajo de la caja de texto */}
+        <div className="mt-2 flex items-center justify-between">
+          {/* Izquierda: Mic + Leer última + Checkbox */}
+          <div className="flex items-center space-x-2">
             <button
               onClick={handleVoiceInput}
-              className={`p-2.5 rounded-lg transition-all text-xs md:text-sm ${
+              className={`p-2 rounded-md transition-all text-xs md:text-sm ${
                 isListening
                   ? "bg-red-500 hover:bg-red-600 text-white"
                   : "bg-slate-700 hover:bg-slate-600 text-blue-300"
               }`}
+              title={isListening ? "Detener micrófono" : "Activar micrófono"}
             >
               {isListening ? (
                 <MicOff className="w-4 h-4" />
@@ -669,10 +791,35 @@ const ChatModule: React.FC = () => {
             <button
               onClick={(e) => {
                 e.preventDefault();
+                handleSpeakLastAi();
+              }}
+              className="p-2 bg-slate-700 hover:bg-slate-600 text-cyan-300 rounded-md transition-all text-xs md:text-sm"
+              title="Leer última respuesta"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+            {/* Checkbox sincronizado de respuesta por voz automática */}
+            <label className="ml-1 flex items-center space-x-2 text-blue-200 text-xs md:text-sm">
+              <input
+                type="checkbox"
+                checked={autoTTS}
+                onChange={(e) => setAutoTTS(e.target.checked)}
+              />
+              <span>Respuesta por voz automática</span>
+            </label>
+          </div>
+          {/* Derecha: botón Enviar */}
+          <div>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                // Marcar origen como texto y enviar
+                sendOriginRef.current = "typed";
                 handleSendMessage();
               }}
               disabled={!inputText.trim()}
-              className="p-2.5 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
+              className="p-2 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
+              title="Enviar"
             >
               <Send className="w-4 h-4" />
             </button>
